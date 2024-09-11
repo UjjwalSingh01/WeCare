@@ -45,7 +45,7 @@ router.post('/subadmin', async(req, res) => {
             })
         }
 
-        res.cookie('token', response.id , {
+        res.cookie('subAdmin', response.id , {
             httpOnly: true,
             secure: false,
             maxAge: 12 * 60 * 1000,
@@ -66,7 +66,7 @@ router.post('/subadmin', async(req, res) => {
 
 router.get('/dashbaord', async(req, res) => {
     try {
-        const subAdminId: string = req.cookies.token
+        const subAdminId: string = req.cookies.subAdmin
 
         if (!subAdminId) {
             return res.status(401).json({ 
@@ -123,12 +123,30 @@ router.post('/update', async(req, res) => {
             })
         );
 
-        res.status(200).json({ message: "Appointments updated successfully" });
+        return res.json({ 
+            message: "Appointments updated successfully" 
+        });
         
     } catch (error) {
         console.error("Error in Sub Admin in Updating Appointment", error);
         return res.status(401).json({ 
             error: "Error in Sub Admin in Updating Appointment" 
+        });
+    }
+})
+
+router.post('/logout', async(req, res) => {
+    try {
+        res.clearCookie('subAdmin')
+
+        return res.json({
+            message: 'Logout Successful'
+        })
+
+    } catch (error) {
+        console.error("Error in Sub Admin Logout", error);
+        return res.status(401).json({ 
+            error: "Error in Sub Admin Logout" 
         });
     }
 })

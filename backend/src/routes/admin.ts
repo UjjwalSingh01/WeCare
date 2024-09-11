@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import { PrismaClient } from "@prisma/client";
+import dayjs from 'dayjs'
 import { AddAdminSchema, AddAdminType, AddSubAdminSchema, AddSubAdminType, doctorSchema, doctorType } from "../schema";
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
@@ -42,7 +43,7 @@ router.post('/admin', async(req, res) => {
             })
         }
 
-        res.cookie("patientTemp", response.id, {
+        res.cookie("Admin", response.id, {
             httpOnly: true,
             secure: false, 
             maxAge: 10 * 60 * 1000,
@@ -58,6 +59,71 @@ router.post('/admin', async(req, res) => {
         console.error("Error in Admin Login:", error);
         return res.status(401).json({ 
             error: "Error in Admin Login" 
+        });
+    }
+})
+
+
+router.get('/admin-dashboard', async(req, res) => {
+    try {
+        const AdminId: string = await req.cookies.Admin;
+
+        const name = await prisma.admin.findFirst({
+            where: {
+                id: AdminId,
+            },
+            select:{
+                fullname: true
+            }
+        })
+
+        const doctors = await prisma.doctor.count()
+
+        const totalAppointment = await prisma.appointment.count()
+
+        const now = dayjs();
+  
+        // Get start and end dates of the current month (formatted as 'YYYY-MM-DD')
+        const startOfCurrentMonth = now.startOf('month').format('YYYY-MM-DD');
+        const endOfCurrentMonth = now.endOf('month').format('YYYY-MM-DD');
+
+        // Get start and end dates of the last month (formatted as 'YYYY-MM-DD')
+        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
+        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+        
+        // Count appointments in the current month
+        const currentMonthAppointments = await prisma.appointment.count({
+            where: {
+            date: {
+                gte: startOfCurrentMonth,
+                lte: endOfCurrentMonth,
+            },
+            },
+        });
+
+        // Count appointments in the last month
+        const lastMonthAppointments = await prisma.appointment.count({
+            where: {
+            date: {
+                gte: startOfLastMonth,
+                lte: endOfLastMonth,
+            },
+            },
+        });
+
+        return res.json({
+            name: name?.fullname,
+            doctors: doctors,
+            total: totalAppointment,
+            currentmonth: currentMonthAppointments,
+            pastmonth: lastMonthAppointments
+        })
+        
+
+    } catch (error) {
+        console.error("Error in Admin DashBoard Details:", error);
+        return res.status(401).json({ 
+            error: "Error in Admin DashBoard Details" 
         });
     }
 })
@@ -221,6 +287,23 @@ router.post('/remove-doctor', async(req, res) => {
         console.error("Error in Removing Doctor:", error);
         return res.status(401).json({ 
             error: "Error in Removing Doctor"
+        });
+    }
+})
+
+
+router.post('/logout', async(req, res) => {
+    try {
+        res.clearCookie('Admin')
+
+        return res.json({
+            message: 'Logout Successful'
+        })
+
+    } catch (error) {
+        console.error("Error in Sub Admin Logout", error);
+        return res.status(401).json({ 
+            error: "Error in Sub Admin Logout" 
         });
     }
 })
