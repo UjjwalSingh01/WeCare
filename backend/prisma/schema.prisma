@@ -30,6 +30,7 @@ model Patient {
   currentMedications        String?
   medicalHistory            String?
   familyMedicalHistory      String?
+  appointments              Appointment[]
 }
 
 model Doctor {
@@ -45,8 +46,10 @@ model Doctor {
 
 model Appointment {
   id           String    @id @default(uuid())
-  doctorId     String      // Foreign key to reference Doctor
+  doctorId     String      
   doctor       Doctor    @relation(fields: [doctorId], references: [id])
+  patientId    String
+  patient      Patient   @relation(fields: [patientId], references: [id])
   reason       String
   note         String?   
   date         String 
