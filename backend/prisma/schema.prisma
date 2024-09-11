@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model Patient {
+  id                String    @id @default(uuid())
+  fullname          String
+  email             String    @unique
+  phoneNumber       String    @unique
+  DOB               String
+  gender            Gender
+  address           String
+  emergencyContactName      String?
+  emergencyContactNumber    String?
+  primaryPhysician          String? // reference basically id hogi
+  allergies                 String?
+  currentMedications        String?
+  medicalHistory            String?
+  familyMedicalHistory      String?
+}
+
+model Doctor {
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  specializations   String[]     // Array of specializations
+  hospitals         String[]     // Array of hospital names
+  about             String
+  rating            Float        // Rating out of 5
+  appointments      Appointment[] // Relation to Appointment model
+}
+
+model Appointment {
+  id           String    @id @default(uuid())
+  doctorId     String      // Foreign key to reference Doctor
+  doctor       Doctor    @relation(fields: [doctorId], references: [id])
+  reason       String
+  note         String?   
+  date         String 
+  time         String   
+  status       Status   
+
+  @@unique([doctorId, date, time], name: "uniqueDoctorAppointment") // Ensure unique date & time for the same doctor
+
+  @@index([doctorId, status], name: "doctorStatusIndex") // Index for efficient querying
+}
+
+
+model Admin {
+  id              String    @id @default(uuid())
+  fullname        String
+  email           String    @unique
+  pin             String
+  removeFacility  Boolean
+}
+
+model SubAdmin {
+  id              String    @id @default(uuid())
+  fullname        String
+  email           String    @unique
+  pin             String
+}
+
+model Otp{
+  id           String     @id @default(uuid())
+  email        String     @unique
+  otp          String
+  expiresAt    DateTime
+}
+
+
+enum Status {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+
+
+// dayjs().format('YYYY-MM-DD HH:mm:ss')  // Output: "2024-09-07 14:25:30"
+// dayjs().format('DD/MM/YYYY')  // Output: "07/09/2024"
+// dayjs().format('hh:mm A')  // Output: "02:25 PM"
+// dayjs().format('MMMM D, YYYY [at] h:mm A')  // Output: "September 7, 2024 at 2:25 PM"
+// dayjs().format('DD MMM YYYY')  // Output: "07 Sep 2024"
