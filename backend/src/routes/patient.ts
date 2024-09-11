@@ -35,7 +35,10 @@ router.post('/register', async(req, res) => {
         });
 
     } catch (error) {
-        
+        console.error("Error in Patient Registration:", error);
+        return res.status(500).json({ 
+            error: "Error in Patient Registration:" 
+        });   
     }
 })
 
@@ -56,7 +59,7 @@ router.get('/get-patient', async(req, res) => {
 
     } catch (error) {
         console.error("Error Retrieving Patient Details:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error Retrieving Patient Details" 
         });
     }
@@ -94,15 +97,32 @@ router.post('/registerPatient', async(req, res) => {
         res.cookie('Patient', response.id , {
             httpOnly: true,
             secure: false,
-            maxAge: 10 * 60 * 1000,
+            maxAge: 12 * 60 * 60 * 1000,
             sameSite: "lax",
         })
 
 
     } catch (error) {
         console.error("Error Adding Patient Details:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error Adding Patient Details" 
+        });
+    }
+})
+
+
+router.post('/logout', async(req, res) => {
+    try {
+        res.clearCookie('Patient')
+
+        return res.json({
+            message: 'Logout Successful'
+        })
+
+    } catch (error) {
+        console.error("Error in Patient Logout", error);
+        return res.status(500).json({ 
+            error: "Error in Patient Logout" 
         });
     }
 })

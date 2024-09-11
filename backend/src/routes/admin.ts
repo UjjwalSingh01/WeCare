@@ -46,7 +46,7 @@ router.post('/admin', async(req, res) => {
         res.cookie("Admin", response.id, {
             httpOnly: true,
             secure: false, 
-            maxAge: 10 * 60 * 1000,
+            maxAge: 12 * 60 * 60 * 1000,
             sameSite: "lax",
         });
 
@@ -57,7 +57,7 @@ router.post('/admin', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Admin Login:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Admin Login" 
         });
     }
@@ -111,18 +111,21 @@ router.get('/admin-dashboard', async(req, res) => {
             },
         });
 
+        const appointments = await prisma.appointment.findMany()
+
         return res.json({
             name: name?.fullname,
             doctors: doctors,
             total: totalAppointment,
             currentmonth: currentMonthAppointments,
-            pastmonth: lastMonthAppointments
+            pastmonth: lastMonthAppointments,
+            appointments: appointments,
         })
         
 
     } catch (error) {
         console.error("Error in Admin DashBoard Details:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Admin DashBoard Details" 
         });
     }
@@ -154,7 +157,7 @@ router.post('/add-admin', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Adding Admin:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Adding Admin" 
         });
     }
@@ -189,7 +192,7 @@ router.post('/add-subadmin', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Adding Sub-Admin:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Adding Sub-Admin" 
         });
     }
@@ -223,7 +226,7 @@ router.post('/remove-subadmin', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Removing Sub-Admin:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Removing Sub-Admin" 
         });
     }
@@ -257,7 +260,7 @@ router.post('/add-doctor', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Adding Doctor:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Adding Doctor"
         });
     }
@@ -285,7 +288,7 @@ router.post('/remove-doctor', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Removing Doctor:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Removing Doctor"
         });
     }
@@ -302,7 +305,7 @@ router.post('/logout', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Sub Admin Logout", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Sub Admin Logout" 
         });
     }

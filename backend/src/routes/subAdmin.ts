@@ -58,7 +58,7 @@ router.post('/subadmin', async(req, res) => {
 
     } catch (error) {
         console.error("Error Logging in Sub Admin", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Logging in Sub Admin" 
         });
     }
@@ -99,7 +99,7 @@ router.get('/dashbaord', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Sub Admin Dashboard Details", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Sub Admin Dashboard Details" 
         });
     }
@@ -129,7 +129,7 @@ router.post('/update', async(req, res) => {
         
     } catch (error) {
         console.error("Error in Sub Admin in Updating Appointment", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Sub Admin in Updating Appointment" 
         });
     }
@@ -145,7 +145,7 @@ router.post('/logout', async(req, res) => {
 
     } catch (error) {
         console.error("Error in Sub Admin Logout", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error in Sub Admin Logout" 
         });
     }

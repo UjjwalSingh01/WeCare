@@ -26,7 +26,7 @@ router.get('/get-doctor', async(req, res) => {
 
     } catch (error) {
         console.error("Error Retrieving ALL Doctors Details:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error Retrieving ALL Doctors Details" 
         });
     }
@@ -57,7 +57,7 @@ router.get('/get-doctor/:email', async(req, res) => {
         
     } catch (error) {
         console.error("Error Retrieving Doctor Details:", error);
-        return res.status(401).json({ 
+        return res.status(500).json({ 
             error: "Error Retrieving Doctor Details" 
         });
     }
