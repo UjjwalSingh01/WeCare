@@ -4,6 +4,7 @@ import AdminPanel from './pages/AdminPanel'
 import Appointment from './pages/Appointment'
 import PatientDetail from './pages/PatientDetail'
 import Register from './pages/Register'
+import SubAdminPanel from './pages/SubAdminPanel';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path='/PatientDetails' element={<PatientDetail />} />
         <Route path='/Appointment' element={<Appointment />} />
         <Route path='/AdminPanel' element={<AdminPanel/>} />
+        <Route path='/SubAdminPanel' element={<SubAdminPanel/>} />
       </Routes>
     </BrowserRouter>
   )

@@ -117,8 +117,7 @@ router.get('/admin-dashboard', async(req, res) => {
             name: name?.fullname,
             doctors: doctors,
             total: totalAppointment,
-            currentmonth: currentMonthAppointments,
-            pastmonth: lastMonthAppointments,
+            monthly: { currentMonthAppointments, lastMonthAppointments },
             appointments: appointments,
         })
         

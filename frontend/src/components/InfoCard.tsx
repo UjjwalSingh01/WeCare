@@ -6,7 +6,7 @@ import { useTheme } from '@mui/material/styles';
 //   amount: number;
 // }
 
-export default function InfoCard() {
+export default function InfoCard({data}: {data: any}) {
   const theme = useTheme();
   return (
     <Box

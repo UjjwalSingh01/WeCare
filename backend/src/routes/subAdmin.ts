@@ -8,6 +8,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import { PrismaClient, Status } from "@prisma/client";
+import dayjs from "dayjs";
+import { z } from 'zod'
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -74,12 +76,27 @@ router.get('/dashbaord', async(req, res) => {
             });
         }
 
+        const name = await prisma.subAdmin.findFirst({
+            where:{
+                id: subAdminId
+            },
+            select:{
+                fullname: true
+            }
+        })
+
+        if(!name){
+            return res.status(401).json({ 
+                error: "Sub Admin does Not Exist" 
+            });
+        }
+
         const appointments = await prisma.appointment.findMany({
             where: {
-              doctorId: subAdminId
+              doctorId: subAdminId,
             },
             include: {
-              patient: true,  
+              patient: true,
             }
         });
           
@@ -91,16 +108,99 @@ router.get('/dashbaord', async(req, res) => {
             time: appointment.time,
             status: appointment.status
         }));
+
+        const now = dayjs();
+  
+        // Get start and end dates of the current month (formatted as 'YYYY-MM-DD')
+        const startOfCurrentMonth = now.startOf('month').format('YYYY-MM-DD');
+        const endOfCurrentMonth = now.endOf('month').format('YYYY-MM-DD');
+
+        // Get start and end dates of the last month (formatted as 'YYYY-MM-DD')
+        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
+        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+        
+        // Count appointments in the current month
+        const currentMonthAppointments = await prisma.appointment.count({
+            where: {
+            date: {
+                gte: startOfCurrentMonth,
+                lte: endOfCurrentMonth,
+            },
+            },
+        });
+
+        // Count appointments in the last month
+        const lastMonthAppointments = await prisma.appointment.count({
+            where: {
+            date: {
+                gte: startOfLastMonth,
+                lte: endOfLastMonth,
+            },
+            },
+        });
           
 
         return res.json({
-            appointments: appointments
+            name: name.fullname,
+            appointments: appointmentDetails,
+            monthly: { currentMonthAppointments, lastMonthAppointments }
         })
 
     } catch (error) {
         console.error("Error in Sub Admin Dashboard Details", error);
         return res.status(500).json({ 
             error: "Error in Sub Admin Dashboard Details" 
+        });
+    }
+})
+
+
+const SubAdminUpdateSchema = z.object({
+    fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
+    email: z.string().email('Enter Correct Email Format'),
+    pin: z.string().length(6, 'Pin must be exactly 6 digits').regex(/^\d{6}$/, 'Pin must only contain digits'),
+})
+
+type SubAdminUpdateTYpe = z.infer<typeof SubAdminUpdateSchema>
+
+router.post('/update-profile', async(req, res) => {
+    const detail: SubAdminUpdateTYpe = await req.body
+
+    try {
+        const subAdminId: string = req.cookies.subAdmin
+
+        if (!subAdminId) {
+            return res.status(401).json({ 
+                error: "Unauthorized: No token provided." 
+            });
+        }
+
+        const zodResult = await SubAdminUpdateSchema.safeParse(detail)
+        if(!zodResult.success){
+            return res.status(401).json({
+                error: 'Invalid Credentials'
+            })
+        }
+
+        await prisma.subAdmin.update({
+            where: {
+                id: subAdminId
+            },
+            data:{
+                fullname: detail.fullname,
+                email: detail.email,
+                pin: detail.pin
+            }
+        })
+
+        return res.json({
+            message: 'Updated Successfully'
+        })
+
+    } catch (error) {
+        console.error("Error in Sub Admin Updation", error);
+        return res.status(500).json({ 
+            error: "Error in Sub Admin Updation" 
         });
     }
 })
