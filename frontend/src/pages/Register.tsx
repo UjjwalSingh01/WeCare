@@ -6,6 +6,7 @@ import { useState } from "react";
 import PinModal from "../components/PinModal";
 import { z } from 'zod'
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const registerSchema = z.object({
   fullname: z.string().min(2, 'Full Name Must Contain Atleast 2 Characters'),
@@ -17,6 +18,8 @@ const Register = () => {
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState();
+
+  const navigate = useNavigate()
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -37,13 +40,14 @@ const Register = () => {
           showSnackbar(`${error.message}`, "error");
         });
       }
-
       else {
         await axios.post('/register', {
           fullname,
           email,
           phoneNumber
         })
+
+        navigate('/PatientDetails')
       }
 
     } catch(error) {

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { TextField, MenuItem, Button, Typography } from '@mui/material';
 import dayjs, {Dayjs} from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import axios from 'axios';
 
 const currencies = [
   {
@@ -25,15 +26,37 @@ const currencies = [
 ];
 
 
+interface DoctorDetails {
+  id: string,
+  name: string
+}
+
+
 const Appointment = () => {
   const [schedule, setSchedule] = useState<Dayjs | null>(null);
   const [physician, setPhysician] = useState('');
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('')
 
+  const [doctors, setDoctors] = useState<DoctorDetails[]>()
+
   // useEffect 
   // for getting all the doctors
   // for getting active appointments
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        const response = await axios.get('/')
+
+        setDoctors(response.data.doctors)
+
+      } catch (error) {
+        console.error('Error in Fetching Doctors: ', error)
+      }
+    }
+    
+    fetchDetails()
+  },[])
 
   const allowedHours = [11, 13, 15, 17, 19]; // 11 AM, 1 PM, 3 PM, 5 PM, 7 PM
 
@@ -48,17 +71,30 @@ const Appointment = () => {
   };
 
 
-    // Handler for dropdown change
+  // Handler for dropdown change
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPhysician(event.target.value);
   };
-
 
 
   async function onSubmit() {
     // CHECK 1: SCHEDULE , REASON , PHYSICIAN MUST NOT BE EMPTY
     // CHECK 2: USE SNACKBAR & ALERT TO SHOW ERRORS
     // IF SLOT IS NOT AVAILABLE SHOW SNACKBAR
+
+    if(schedule === null || reason === "" || physician === ""){ 
+      
+    }
+    else {
+      const response = await axios.post('/', {
+        physician,
+        reason,
+        note,
+        date: schedule.format('MM/DD/YYYY')
+      })
+
+      console.log(response.data)
+    }
   }
 
   return (
@@ -68,10 +104,9 @@ const Appointment = () => {
           
         </section>
 
-        
         <section className="bg-emerald-300 w-[75%] h-full flex justify-end items-center">
           
-        <div className="bg-purple-600 w-full sm:w-[90%] md:w-[80%] lg:w-[70%] h-full sm:h-[80%] lg:h-[70%] mr-4 sm:mr-10 lg:mr-20 p-4 sm:p-6 md:p-16 flex-col justify-center items-center transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
+          <div className="bg-purple-600 w-full sm:w-[90%] md:w-[80%] lg:w-[70%] h-full sm:h-[80%] lg:h-[70%] mr-4 sm:mr-10 lg:mr-20 p-4 sm:p-6 md:p-16 flex-col justify-center items-center transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
             
             <div className="">
                 <Typography
@@ -108,6 +143,11 @@ const Appointment = () => {
                             {option.label}
                         </MenuItem>
                     ))}
+                    {/* {doctors.map((doctor, index) => (
+                        <MenuItem key={index} value={doctor.name}>
+                            {doctor.name}
+                        </MenuItem>
+                    ))} */}
                 </TextField>
 
                 <div className="flex flex-col md:flex-row gap-4 md:gap-16 justify-around mt-4">
@@ -133,7 +173,7 @@ const Appointment = () => {
                 </div>
 
                 {/* DateTimePicker */}
-                <div className="mt-7">
+                <div className="mt-7 flex justify-center items-center">
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DateTimePicker
                             label="Schedule Appointment"
@@ -149,6 +189,7 @@ const Appointment = () => {
                 </div>
 
                 {/* Button */}
+                <div className="mt-7 flex justify-center items-center">
                 <Button
                     variant="contained"
                     onClick={() => {onSubmit()}}
@@ -176,8 +217,9 @@ const Appointment = () => {
                 >
                 Book Appointment
                 </Button>
+                </div>
             </div>
-        </div>
+          </div>
         </section>
 
         <div className="bg-blue-400 w-[90%] sm:w-[425px] h-[50%] sm:h-[80%] shadow-2xl flex justify-center items-center rounded-tl-[100px] rounded-br-[100px] absolute top-[20%] sm:top-[10%] left-[10%] sm:left-[25%] transform -translate-x-1/2 rounded-lg transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl">
