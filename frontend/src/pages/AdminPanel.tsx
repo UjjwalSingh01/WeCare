@@ -7,9 +7,10 @@ import DoctorDetailModal from '../components/DoctorDetailModal';
 import ScheduleTable from '../components/ScheduleTable';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import MonthInfoCard from '../components/MonthInfoCard';
 
 
-interface MonthDetails {
+export interface MonthDetails {
     currentMonthAppointments: number,
     lastMonthAppointments: number
 }
@@ -29,11 +30,14 @@ export interface AppointmentsDetails {
 
 const AdminPanel = () => {
    const [name, setName] = useState('')
-   const [total, setTotal] = useState(0)
-   const [monthly, setMonthly] = useState<MonthDetails>()
+   const [total, setTotal] = useState(10)
+   const [monthly, setMonthly] = useState<MonthDetails>({
+    currentMonthAppointments: 10,
+    lastMonthAppointments: 5
+   })
    const [appointments, setAppointments] = useState<AppointmentsDetails[]>([])
    const [doctors, setDoctor] = useState<RemoveDetails[]>([])
-   const [doctorCount, setDoctorCount] = useState(0)
+   const [doctorCount, setDoctorCount] = useState(15)
    const [admins, setAdmins] = useState<RemoveDetails[]>([])
    const [subadmins, setSubAdmins] = useState<RemoveDetails[]>([])
 
@@ -83,9 +87,9 @@ const AdminPanel = () => {
 
       {/* Info Cards Section */}
       <div className="grid xl:grid-cols-3">
-            <InfoCard data={total} />
-            <InfoCard data={monthly} />
-            <InfoCard data={doctorCount} />
+            <InfoCard heading='Total Appointments' data={total} />
+            <MonthInfoCard data={monthly} />
+            <InfoCard heading='Total Doctors' data={doctorCount} />
       </div>
 
       <Divider sx={{ mb: 4 }} />

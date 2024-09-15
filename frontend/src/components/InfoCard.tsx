@@ -6,7 +6,7 @@ import { useTheme } from '@mui/material/styles';
 //   amount: number;
 // }
 
-export default function InfoCard({data}: {data: any}) {
+export default function InfoCard({data, heading}: {data: number, heading: string}) {
   const theme = useTheme();
   return (
     <Box
@@ -50,8 +50,8 @@ export default function InfoCard({data}: {data: any}) {
               color: 'text.secondary',
             }}
           >
-            {/* {heading}: */}
-            Info Count
+            {heading}:
+            {/* Info Count */}
           </Typography>
           <Typography
             variant="h5"
@@ -63,8 +63,8 @@ export default function InfoCard({data}: {data: any}) {
               color: 'text.primary',
             }}
           >
-            {/* ₹{amount} */}
-            Info Details
+            {data}
+            {/* Info Details */}
           </Typography>
         </CardContent>
       </Card>

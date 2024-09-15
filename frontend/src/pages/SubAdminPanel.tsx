@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import DoctorDetailModal from '../components/DoctorDetailModal';
 import BasicModal from '../components/BasicModel';
+import MonthInfoCard from '../components/MonthInfoCard';
 
 interface MonthlyDetails {
   currentMonthAppointments: number;
@@ -23,7 +24,11 @@ interface AppointmentDetails {
 
 const SubAdminPanel = () => {
   const [name, setName] = useState('John Doe');
-  const [monthly, setMonthly] = useState<MonthlyDetails>();
+  const [monthly, setMonthly] = useState<MonthlyDetails>({
+    currentMonthAppointments: 22,
+    lastMonthAppointments:92
+  });
+  const [totalAppointments, setTotalAppointments] = useState(192)
   const [appointments, setAppointments] = useState<AppointmentDetails>();
 
   useEffect(() => {
@@ -33,6 +38,7 @@ const SubAdminPanel = () => {
 
         setName(response.data.name);
         setMonthly(response.data.monthly);
+        setTotalAppointments(response.data.totalAppointments)
         setAppointments(response.data.appointments);
       } catch (error) {
         console.error('Error in Fetching Notification: ', error);
@@ -84,8 +90,8 @@ const SubAdminPanel = () => {
             marginBottom: { xs: 3, md: 5 }, // Adjust margin for responsiveness
           }}
         >
-          <InfoCard data={monthly} />
-          <InfoCard data={appointments} />
+          <MonthInfoCard data={monthly} />
+          <InfoCard data={totalAppointments} heading='Total Appointment' />
           <DoctorDetailModal />
         </Box>
 

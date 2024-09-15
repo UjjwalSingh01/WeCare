@@ -138,12 +138,18 @@ router.get('/dashbaord', async(req, res) => {
             },
             },
         });
-          
+        
+        const totalAppointments = await prisma.appointment.count({
+            where:{
+                doctorId: subAdminId
+            }
+        })
 
         return res.json({
             name: name.fullname,
             appointments: appointmentDetails,
-            monthly: { currentMonthAppointments, lastMonthAppointments }
+            monthly: { currentMonthAppointments, lastMonthAppointments },
+            totalAppointments: totalAppointments
         })
 
     } catch (error) {
