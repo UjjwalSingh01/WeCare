@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import { PrismaClient } from "@prisma/client";
+import { appointmentSchema, appointmentType } from "../schema";
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -28,10 +29,12 @@ router.post('/get-appointment', async(req, res) => {
               status: 'ACTIVE',
             },
             select: {
-              id: true, 
+              id: true,
+              date: true,
+              time: true,
               doctor: {
                 select: {
-                  name: true,
+                  fullname: true,
                 },
               },
             },
@@ -39,11 +42,21 @@ router.post('/get-appointment', async(req, res) => {
           
         const result = appointments.map(appointment => ({
             appointmentId: appointment.id,
-            doctorName: appointment.doctor.name,
+            date: appointment.date,
+            time: appointment.time,
+            doctorName: appointment.doctor.fullname,
         }));
 
+        const doctors = await prisma.doctor.findMany({
+            select: {
+                fullname: true,
+                id: true
+            }
+        })
+
         return res.json({
-            appointments: result
+            appointments: result,
+            doctors: doctors
         })
 
 
@@ -56,7 +69,85 @@ router.post('/get-appointment', async(req, res) => {
 })
 
 router.post('/make-appointment', async(req, res) => {
+    try {
+        const detail: appointmentType = await req.body
+        const zodResult = await appointmentSchema.safeParse(detail)
+        if(!zodResult.success){
+            return res.status(401).json({
+                error: 'Invalid Credentials'
+            })
+        }
 
+        const patientId = await req.cookies.patient
+
+        if(!patientId){
+            return res.status(401).json({
+                error: "Unauthorized: Patient token not present",
+            });
+        }
+
+        const response = await prisma.appointment.count({
+            where:{
+                patientId: patientId
+            }
+        })
+
+        if(response == 5){
+            return res.status(400).json({
+                error: "You cannot have more than 5 appointments",
+            });
+        }
+
+        const duplicateAppointment = await prisma.appointment.findFirst({
+            where:{
+                doctorId: detail.physician,
+                date: detail.date,
+                time: detail.time
+            }
+        })
+
+        if(duplicateAppointment){
+            return res.status(409).json({
+                error: "Appointment at this date and time already Active",
+            });
+        }
+
+        const duplicatePatientAppointment = await prisma.appointment.findFirst({
+            where:{
+                patientId: patientId,
+                date: detail.date,
+                time: detail.time
+            }
+        })
+
+        if(duplicatePatientAppointment){
+            return res.status(409).json({
+                error: "You Already have an Appointment at this Date & Time",
+            });
+        }
+
+        await prisma.appointment.create({
+            data: {
+                doctorId: detail.physician,
+                patientId: patientId,
+                reason: detail.reason,
+                note: detail.note,
+                date: detail.date,
+                time: detail.time,
+                status: 'ACTIVE'
+            }
+        })
+
+        return res.status(200).json({
+            message: 'Appointment Added Successfully'
+        })
+
+    } catch (error) {
+        console.error('Error creating appointment:', error);
+        return res.status(500).json({
+            error: "Internal Server Error: Unable to create appointment",
+        });
+    }
 })
 
 router.post('/cancel-appointment', async(req, res) => {

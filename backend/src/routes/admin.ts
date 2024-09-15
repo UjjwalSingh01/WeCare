@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import { PrismaClient } from "@prisma/client";
 import dayjs from 'dayjs'
 import { AddAdminSchema, AddAdminType, AddSubAdminSchema, AddSubAdminType, doctorSchema, doctorType } from "../schema";
+import { date } from "zod";
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -51,7 +52,7 @@ router.post('/admin', async(req, res) => {
         });
 
         // verfied then navigate to admin page
-        return res.json({
+        return res.status(200).json({
             message: 'Verified'
         })
 
@@ -73,11 +74,17 @@ router.get('/admin-dashboard', async(req, res) => {
                 id: AdminId,
             },
             select:{
+                removeFacility: true,
                 fullname: true
             }
         })
 
-        const doctors = await prisma.doctor.count()
+        const doctors = await prisma.doctor.findMany({
+            select:{
+                fullname: true,
+                id: true
+            }
+        })
 
         const totalAppointment = await prisma.appointment.count()
 
@@ -111,11 +118,55 @@ router.get('/admin-dashboard', async(req, res) => {
             },
         });
 
-        const appointments = await prisma.appointment.findMany()
+        const appointment = await prisma.appointment.findMany({
+            select:{
+                date: true,
+                time: true,
+                status: true,
+                doctor: {
+                    select:{
+                        fullname: true,
+                    }
+                },
+                patient:{
+                    select:{
+                        fullname: true
+                    }
+                }
+            }
+        })
+
+        const appointments = appointment.map(appointment => ({
+            doctor: appointment.doctor.fullname,
+            patient: appointment.patient.fullname,
+            date: appointment.date,
+            time: appointment.time,
+            status: appointment.status
+        }))
+
+        const subadmin = await prisma.subAdmin.findMany({
+            select:{
+                id: true,
+                fullname: true
+            }
+        })
+
+        let admins: any = [];
+        if(name?.removeFacility === true){
+            admins = await prisma.admin.findMany({
+                select:{
+                    id: true,
+                    fullname: true
+                }
+            })
+        }
 
         return res.json({
             name: name?.fullname,
             doctors: doctors,
+            doctorCount: doctors.length,
+            subadmins: subadmin,
+            admins: admins,
             total: totalAppointment,
             monthly: { currentMonthAppointments, lastMonthAppointments },
             appointments: appointments,
@@ -146,11 +197,11 @@ router.post('/add-admin', async(req, res) => {
                 fullname: detail.fullname,
                 email: detail.email,
                 pin: detail.pin,
-                removeFacility: detail.removeFacility
+                removeFacility: false
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             message: 'Admin Added Successfully'
         })
 
@@ -163,7 +214,38 @@ router.post('/add-admin', async(req, res) => {
 })
 
 router.post('/remove-admin', async(req, res) => {
-    // not everyone will have this functionality
+    try {
+        const adminId = await req.body
+
+        const response = await prisma.admin.findFirst({
+            where:{
+                id: adminId
+            }
+        })
+
+        if(!response){
+            return res.status(401).json({
+                message: "Admin Does not Exist"
+            })
+        }
+
+        await prisma.admin.delete({
+            where:{
+                id: adminId
+            }
+        })
+
+        return res.status(200).json({
+            message: 'Admin Deleted Successfully'
+        })
+
+    } catch (error) {
+        console.error("Error in Removing Admin:", error);
+        return res.status(500).json({ 
+            error: "Error in Removing Admin" 
+        });
+    }
+
 })
 
 
@@ -185,7 +267,7 @@ router.post('/add-subadmin', async(req, res) => {
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             message: 'Sub-Admin Added Successfully'
         })
 
@@ -199,11 +281,11 @@ router.post('/add-subadmin', async(req, res) => {
 
 router.post('/remove-subadmin', async(req, res) => {
     try {
-        const SubAdminEmail: string = await req.body
+        const SubAdminId: string = await req.body
 
         const response = await prisma.subAdmin.findFirst({
             where:{
-                email: SubAdminEmail
+                id: SubAdminId
             }
         })
 
@@ -215,11 +297,11 @@ router.post('/remove-subadmin', async(req, res) => {
 
         await prisma.subAdmin.delete({
             where:{
-                email: SubAdminEmail
+                id: SubAdminId
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             message: 'Sub Admin Removed'
         })
 
@@ -243,7 +325,7 @@ router.post('/add-doctor', async(req, res) => {
 
         await prisma.doctor.create({
             data: {
-                name: details.name,
+                fullname: details.fullname,
                 email: details.email,
                 specializations: details.specializations,
                 hospitals: details.hospitals,
@@ -252,7 +334,7 @@ router.post('/add-doctor', async(req, res) => {
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             message: 'Doctor Added Successfully'
         })
 
@@ -267,21 +349,27 @@ router.post('/add-doctor', async(req, res) => {
 
 router.post('/remove-doctor', async(req, res) => {
     try {
-        const DoctorEmail: string = await req.body
+        const DoctorId: string = await req.body
 
         const response = await prisma.doctor.findFirst({
             where: {
-                email: DoctorEmail
+                id: DoctorId
             }
         })
+
+        if(!response){
+            return res.status(409).json({
+                error: 'Doctor Does Not Exist'
+            })
+        }
 
         await prisma.doctor.delete({
             where:{
-                id: DoctorEmail
+                id: DoctorId
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             message: 'Doctor Removed Successfully'
         })
 
@@ -298,7 +386,7 @@ router.post('/logout', async(req, res) => {
     try {
         res.clearCookie('Admin')
 
-        return res.json({
+        return res.status(200).json({
             message: 'Logout Successful'
         })
 

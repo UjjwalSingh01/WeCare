@@ -52,7 +52,7 @@ const rows = [
   createData('Candy', 180, 6.0, 20, 3.0),
 ];
 
-export default function ScheduleTable() {
+export default function ScheduleTable({appointments} : {appointments: any}) {
   const [page, setPage] = useState(0); // State for the current page
   const rowsPerPage = 10; // Set rows per page to 10
 

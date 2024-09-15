@@ -34,6 +34,10 @@ router.post('/register', async(req, res) => {
             sameSite: "lax",
         });
 
+        return res.status(200).json({ 
+            message: "Patient registered successfully" 
+        });
+
     } catch (error) {
         console.error("Error in Patient Registration:", error);
         return res.status(500).json({ 
@@ -45,7 +49,7 @@ router.post('/register', async(req, res) => {
 
 router.get('/get-patient', async(req, res) => {
     try {
-        const detail = req.cookies.patientTemp;
+        const detail: registerType = req.cookies.patientTemp;
 
         if(!detail){
             return res.status(400).json({
@@ -53,8 +57,18 @@ router.get('/get-patient', async(req, res) => {
             })
         }
 
+        const doctors = await prisma.doctor.findMany({
+            select:{
+                id: true,
+                fullname: true
+            }
+        })
+
         return res.json({
-            detail: detail
+            fullname: detail.fullname,
+            email: detail.email,
+            patientPhone: detail.phoneNumber,
+            doctors: doctors
         })
 
     } catch (error) {
@@ -80,15 +94,15 @@ router.post('/registerPatient', async(req, res) => {
             data: {
                 fullname: patientDetails.fullname,
                 email: patientDetails.email,
-                phoneNumber: patientDetails.phoneNumber,
-                DOB: patientDetails.DOB,
+                phoneNumber: patientDetails.patientPhone,
+                DOB: patientDetails.dob,
                 gender: patientDetails.gender,
                 address: patientDetails.address,
                 emergencyContactName: patientDetails.emergencyContactName,
-                emergencyContactNumber: patientDetails.emergencyContactNumber,
+                emergencyContactNumber: patientDetails.emergenyPhone,
                 primaryPhysician: patientDetails.primaryPhysician,
                 allergies: patientDetails.allergies,
-                currentMedications: patientDetails.currentMedications,
+                currentMedications: patientDetails.medications,
                 medicalHistory: patientDetails.medicalHistory,
                 familyMedicalHistory: patientDetails.familyMedicalHistory
             }
@@ -99,6 +113,10 @@ router.post('/registerPatient', async(req, res) => {
             secure: false,
             maxAge: 12 * 60 * 60 * 1000,
             sameSite: "lax",
+        })
+
+        return res.status(200).json({
+            message: 'Patient Details Added Successfully'
         })
 
 

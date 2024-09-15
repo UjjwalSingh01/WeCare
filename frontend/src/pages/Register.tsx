@@ -2,6 +2,7 @@ import { Alert, Button, Snackbar, TextField, Typography } from "@mui/material";
 import image from '../assets/doctor.jpg';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
+// import  E164Number  from 'react-phone-number-input';
 import { useState } from "react";
 import PinModal from "../components/PinModal";
 import { z } from 'zod'
@@ -11,13 +12,14 @@ import { useNavigate } from "react-router-dom";
 const registerSchema = z.object({
   fullname: z.string().min(2, 'Full Name Must Contain Atleast 2 Characters'),
   email: z.string().email('Email Format is Invalid'),
-  phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters long'),
+  phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
 })
 
 const Register = () => {
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState();
+  // const [phoneNumber, setPhoneNumber] = useState<typeof E164Number | undefined>(undefined);
+  const [phoneNumber, setPhoneNumber] = useState<string | undefined>('')
 
   const navigate = useNavigate()
 
@@ -41,13 +43,18 @@ const Register = () => {
         });
       }
       else {
-        await axios.post('/register', {
+        const response = await axios.post('http://localhost:3000/api/v1/patient/register', {
           fullname,
           email,
           phoneNumber
         })
 
-        navigate('/PatientDetails')
+        if (response.status === 200) {
+          showSnackbar("Registration Successful", "success");
+          navigate('/PatientDetails');
+        } else {
+          showSnackbar("Registration Failed", "error");
+        }
       }
 
     } catch(error) {

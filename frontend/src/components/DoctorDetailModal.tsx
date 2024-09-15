@@ -3,7 +3,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
 import { useState } from 'react';
-import { Chip, TextField } from '@mui/material';
+import { Alert, Chip, Snackbar, TextField } from '@mui/material';
 import axios from 'axios';
 
 const style = {
@@ -23,7 +23,17 @@ export default function DoctorDetailModal() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const [name, setName] = useState('');
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+  };
+
+  const [fullname, setName] = useState('');
   const [email, setEmail] = useState('');
   const [about, setAbout] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);
@@ -56,17 +66,23 @@ export default function DoctorDetailModal() {
 
   async function handleAdd() {
     try {
-      const response = await axios.post('/', {
-        name,
+      const response = await axios.post('http://localhost:3000/api/v1/admin/add-doctor', {
+        fullname,
         email,
         specializations,
         hospitals,
         about
       })
 
-      console.log(response.data)
+      if(response.status === 200){
+        showSnackbar(`${response.data.message}`, "success");
+      }
+      else {
+        showSnackbar(`${response.data.error}`, "error");
+      }
 
     } catch (error) {
+      showSnackbar("Error in Adding Doctor", "error");
       console.error('Error in Adding Doctor: ', error)
     }
   }
@@ -182,6 +198,43 @@ export default function DoctorDetailModal() {
           </Button>
         </Box>
       </Modal>
+      <Snackbar
+          open={openSnackbar}
+          autoHideDuration={6000}
+          onClose={() => setOpenSnackbar(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{
+            width: '400px', // Control width
+            borderRadius: '8px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            padding: '0',
+            '& .MuiSnackbarContent-root': {
+              padding: 0, // Remove default padding
+            },
+          }}
+        >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarSeverity}
+          sx={{
+            background: snackbarSeverity === 'success'
+              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
+              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
+            color: '#fff', // Text color
+            fontSize: '1.1rem', // Larger font
+            fontWeight: 'bold', // Bold text
+            borderRadius: '8px', // Rounded corners
+            padding: '16px', // Padding inside Alert
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Add shadow
+            width: '100%', // Take up the full Snackbar width
+            '& .MuiAlert-icon': {
+              fontSize: '28px', // Larger icon size
+            },
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

@@ -1,6 +1,7 @@
-import * as React from 'react';
-import { Box, Button, Typography, Modal, MenuItem, TextField } from '@mui/material';
+import { Box, Button, Typography, Modal, MenuItem, TextField, Snackbar, Alert } from '@mui/material';
 import axios from 'axios';
+import { useState } from 'react';
+import { DoctorDetails } from '../pages/PatientDetail';
 
 const style = {
   position: 'absolute' as 'absolute',
@@ -15,39 +16,59 @@ const style = {
   outline: 'none',
 };
 
-const admin = [
-  {
-    id: '1',
-    name: 'John Doe',
-  },
-  {
-    id: '2',
-    name: 'Jane Edo',
-  },
-];
 
-export default function RemoveModal({ heading }: { heading: string }) {
-  const [open, setOpen] = React.useState(false);
+export default function RemoveModal({ heading, data }: { heading: string, data: DoctorDetails[] }) {
+  const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const [member, setMember] = React.useState('');
+  const [removeId, setRemoveId] = useState('')
+
+  const member = data;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setMember(event.target.value);
+    setRemoveId(event.target.value);
+  };
+
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
   };
 
   async function OnRemove() {
     try {
-        const response = await axios.post('/', {
-            member
+
+        let path = '';
+        if(heading === 'Remove Doctor') {
+            path = 'remove-doctor'
+        }
+        else if(heading === 'Remove Admin'){
+            path = 'remove-admin'
+        }
+        else if(heading === 'Remove Sub Admin'){
+            path = 'remove-subadmin'
+        }
+
+        const response = await axios.post(`http://localhost:3000/api/v1/admin/${path}`, {
+            removeId
         })
 
-        console.log(response.data.message)
+        if(response.status === 200){
+            showSnackbar(`${response.data.message}`, "success");
+        }
+        else {
+            showSnackbar(`${response.data.error}`, 'error')
+        }
 
-        // handleClose();
+        handleClose();
 
     } catch (error) {
+        showSnackbar("Error in Removing Modal", "error");
         console.error('Error in Removing Modal: ', error)
     }
   }
@@ -71,15 +92,15 @@ export default function RemoveModal({ heading }: { heading: string }) {
           <TextField
             id="outlined-select-admin"
             select
-            label={heading}
+            label='Select'
             fullWidth
-            value={member}
+            value={removeId}
             onChange={handleChange}
             sx={{ mb: 3 }}
           >
-            {admin.map((option) => (
-              <MenuItem key={option.id} value={option.id}>
-                {option.name}
+            {member.map((option, index) => (
+              <MenuItem key={index} value={option.id}>
+                {option.fullname}
               </MenuItem>
             ))}
           </TextField>
@@ -94,6 +115,43 @@ export default function RemoveModal({ heading }: { heading: string }) {
           </Box>
         </Box>
       </Modal>
+      <Snackbar
+          open={openSnackbar}
+          autoHideDuration={6000}
+          onClose={() => setOpenSnackbar(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{
+            width: '400px', // Control width
+            borderRadius: '8px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            padding: '0',
+            '& .MuiSnackbarContent-root': {
+              padding: 0, // Remove default padding
+            },
+          }}
+        >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarSeverity}
+          sx={{
+            background: snackbarSeverity === 'success'
+              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
+              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
+            color: '#fff', // Text color
+            fontSize: '1.1rem', // Larger font
+            fontWeight: 'bold', // Bold text
+            borderRadius: '8px', // Rounded corners
+            padding: '16px', // Padding inside Alert
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Add shadow
+            width: '100%', // Take up the full Snackbar width
+            '& .MuiAlert-icon': {
+              fontSize: '28px', // Larger icon size
+            },
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

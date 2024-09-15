@@ -14,21 +14,40 @@ interface MonthDetails {
     lastMonthAppointments: number
 }
 
+interface RemoveDetails {
+    id: string, 
+    fullname: string
+}
+
+export interface AppointmentsDetails {
+    doctor: string,
+    patient: string,
+    date: string,
+    time: string,
+    status: 'ACTIVE' | 'CANCELLED' | 'COMPLETED'
+}
+
 const AdminPanel = () => {
    const [name, setName] = useState('')
    const [total, setTotal] = useState(0)
    const [monthly, setMonthly] = useState<MonthDetails>()
-   const [appointments, setAppointments] = useState()
-   const [doctors, setDoctor] = useState(0)
+   const [appointments, setAppointments] = useState<AppointmentsDetails[]>([])
+   const [doctors, setDoctor] = useState<RemoveDetails[]>([])
+   const [doctorCount, setDoctorCount] = useState(0)
+   const [admins, setAdmins] = useState<RemoveDetails[]>([])
+   const [subadmins, setSubAdmins] = useState<RemoveDetails[]>([])
 
    useEffect(() => {
     const fetchDetails = async () => {
         try {
             
-            const response = await axios.get('/')
+            const response = await axios.get('http://localhost:3000/api/v1/admin/admin-dashboard')
 
             setName(response.data.name)
             setDoctor(response.data.doctors)
+            setDoctorCount(response.data.doctorCount)
+            setAdmins(response.data.admins)
+            setSubAdmins(response.data.subadmins)
             setTotal(response.data.total)
             setMonthly(response.data.monthly)
             setAppointments(response.data.appointments)
@@ -66,7 +85,7 @@ const AdminPanel = () => {
       <div className="grid xl:grid-cols-3">
             <InfoCard data={total} />
             <InfoCard data={monthly} />
-            <InfoCard data={doctors} />
+            <InfoCard data={doctorCount} />
       </div>
 
       <Divider sx={{ mb: 4 }} />
@@ -94,7 +113,7 @@ const AdminPanel = () => {
           }}
         >
           <DoctorDetailModal />
-          <RemoveModal heading='Remove Doctor' />
+          <RemoveModal heading='Remove Doctor' data={doctors} />
         </Box>
       </Box>
 
@@ -123,7 +142,7 @@ const AdminPanel = () => {
           }}
         >
           <BasicModal heading='Add Admin' action='Add' />
-          <RemoveModal heading='Remove Admin' />
+          <RemoveModal heading='Remove Admin' data={admins} />
         </Box>
       </Box>
 
@@ -152,7 +171,7 @@ const AdminPanel = () => {
             }}
             >
             <BasicModal heading='Add Sub Admin' action='Add' />
-            <RemoveModal heading='Remove Sub Admin' />
+            <RemoveModal heading='Remove Sub Admin' data={subadmins} />
         </Box>
       </Box>
 
@@ -174,7 +193,7 @@ const AdminPanel = () => {
         >
           Appointments
         </Typography>
-        <ScheduleTable /> 
+        <ScheduleTable appointments={appointments} /> 
       </Box>
     </Box>
   );

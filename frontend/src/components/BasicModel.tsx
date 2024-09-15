@@ -5,6 +5,7 @@ import Modal from '@mui/material/Modal';
 import TextField from '@mui/material/TextField';
 import { useState } from 'react';
 import axios from 'axios';
+import { Alert, Snackbar } from '@mui/material';
 
 const style = {
   position: 'absolute' as 'absolute',
@@ -28,26 +29,42 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
   const [pin, setPin] = useState('')
 //   const [allowRemove, setAllowRemove] = useState(false);
 
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
+    const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+    const showSnackbar = (message: string, severity: "success" | "error") => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+    };
+
   async function onSubmit() {
 
     try{
-        if(action === 'Update') {
-
+        let path = '';
+        if(heading === 'Add Admin') {
+            path = 'add-admin'
         }
-        if(action === 'Add') {
-
+        else if(heading === 'Add Sub Admin') {
+            path = 'add-subadmin'
         }
 
-        const response = await axios.post('', {
+        const response = await axios.post(`http://localhost:3000/api/v1/admin/${path}`, {
             fullname,
             email,
             pin,
-            // allowRemove
         })
 
-        console.log(response.data)
+        if(response.status === 200){
+            showSnackbar(`${response.data.message}`, "success");
+        }
+        else {
+            showSnackbar(`${response.data.error}`, "error");
+        }
 
     } catch(error) {
+        showSnackbar("Error in Basic Modal", "error");
         console.log('Error in Basic Model: ', error)
     }
 
@@ -137,6 +154,43 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
           </Button>
         </Box>
       </Modal>
+      <Snackbar
+          open={openSnackbar}
+          autoHideDuration={6000}
+          onClose={() => setOpenSnackbar(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{
+            width: '400px', // Control width
+            borderRadius: '8px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            padding: '0',
+            '& .MuiSnackbarContent-root': {
+              padding: 0, // Remove default padding
+            },
+          }}
+        >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarSeverity}
+          sx={{
+            background: snackbarSeverity === 'success'
+              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
+              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
+            color: '#fff', // Text color
+            fontSize: '1.1rem', // Larger font
+            fontWeight: 'bold', // Bold text
+            borderRadius: '8px', // Rounded corners
+            padding: '16px', // Padding inside Alert
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Add shadow
+            width: '100%', // Take up the full Snackbar width
+            '& .MuiAlert-icon': {
+              fontSize: '28px', // Larger icon size
+            },
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

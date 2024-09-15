@@ -13,15 +13,15 @@ type registerType = z.infer<typeof registerSchema>
 const patientSchema = z.object({
     email: z.string().email('Enter Correct Email Format'),
     fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
-    phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
-    DOB: z.string(),
+    patientPhone :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+    dob: z.string(),
     gender: z.enum(['Male', 'Female' , 'Other']),
     address: z.string(),
     emergencyContactName: z.string().optional(),
-    emergencyContactNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
+    emergenyPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
     primaryPhysician: z.string().optional(),
     allergies: z.string().optional(),
-    currentMedications: z.string().optional(),
+    medications: z.string().optional(),
     medicalHistory:z.string().optional(),
     familyMedicalHistory: z.string().optional()
 })
@@ -30,16 +30,17 @@ type patientType = z.infer<typeof patientSchema>
 
 
 const appointmentSchema = z.object({
-    doctor: z.string(),
+    physician: z.string(),
     reason: z.string(),
     note: z.string().optional(),
-    // schedule: 
+    date: z.string(),
+    time: z.string()
 })
 
 type appointmentType = z.infer<typeof appointmentSchema>
 
 const doctorSchema = z.object({
-    name: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
+    fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
     email: z.string().email('Enter Correct Email Format'),
     specializations: z
         .array(z.string().nonempty("Specialization cannot be an empty string."))

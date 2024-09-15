@@ -99,7 +99,7 @@ const SubAdminPanel = () => {
             overflowX: 'auto', // Handle table overflow on small screens
           }}
         >
-          <ScheduleTable />
+          <ScheduleTable appointments={appointments} />
         </Box>
       </Box>
     </div>

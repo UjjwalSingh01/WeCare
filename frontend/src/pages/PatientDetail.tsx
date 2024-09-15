@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-// import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
-// import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, TextField, Button, Typography, FormControl, RadioGroup, FormControlLabel, Radio, MenuItem, Snackbar, Alert } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -11,25 +9,6 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import image from '../assets/doctor.jpg'
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
-// const currencies = [
-//   {
-//     value: 'USD',
-//     label: '$',
-//   },
-//   {
-//     value: 'USD',
-//     label: '$',
-//   },
-//   {
-//     value: 'USD',
-//     label: '$',
-//   },
-//   {
-//     value: 'USD',
-//     label: '$',
-//   }
-// ];
 
 // Define Zod schema for form validation
 const schema = z.object({
@@ -43,27 +22,40 @@ const schema = z.object({
   medications: z.string().optional(),
   medicalHistory: z.string().optional(),
   familyMedicalHistory: z.string().optional(),
-  physician: z.string().optional(),
+  primaryPhysician: z.string().optional(),
 });
 
 
-interface DoctorDetails {
-  id: string,
-  name: string
+export interface DoctorDetails {
+  id: string;
+  fullname: string;
 }
 
 const PatientDetail = () => {
-  const [doctors, setDoctors] = useState<DoctorDetails[]>([])
+  const [doctors, setDoctors] = useState<DoctorDetails[]>([
+    {
+      id: '1',
+      fullname: 'JOhn Doe'
+    },
+    {
+      id: '2',
+      fullname: 'Jane Doe'
+    } , 
+    {
+      id: '3',
+      fullname: 'Edo Jane'
+    }
+  ])
 
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('')
-  const [patientPhone, setPatientPhone] = useState('');
+  const [patientPhone, setPatientPhone] = useState<string | undefined>('');
   const [value, setValue] = useState<Dayjs | null>(dayjs(''));
   const [gender, setGender] = useState('')
   const [address, setAddress] = useState('')
-  const [emergenyPhone, setEmergenyPhone] = useState('');
-  const [EmergencyContactName, setEmergencyContactName] = useState('')
-  const [physician,setPhysician] = useState('')
+  const [emergenyPhone, setEmergenyPhone] = useState<string | undefined>('');
+  const [emergencyContactName, setEmergencyContactName] = useState('')
+  const [primaryPhysician,setPhysician] = useState('')
   const [allergies, setAllergies] = useState('');
   const [medications, setMedications] = useState('');
   const [medicalHistory, setMedicalHistory] = useState('')
@@ -89,24 +81,25 @@ const PatientDetail = () => {
     setPhysician(event.target.value);
   };
 
-  // useEffect(() => {
-  //   const fetchDetails = async () => {
-  //     try {
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
 
-  //       const response = await axios.get('/')
+        const response = await axios.get('http://localhost:3000/api/v1/patient/get-patient')
 
-  //       setFullname(response.data.fullname || '')
-  //       setEmail(response.data.email || '')
-  //       setPatientPhone(response.data.patientPhone || '')
-  //       setDoctors(response.data.doctors)
+        setFullname(response.data.fullname || '')
+        setEmail(response.data.email || '')
+        setPatientPhone(response.data.patientPhone || '')
+        setDoctors(response.data.doctors)
 
-  //     } catch (error) {
-  //       console.error('Error in Fetching Patient Details: ', error)
-  //     }
-  //   }
+      } catch (error) {
+        showSnackbar("Error in Fetching Patient Details", "error");
+        console.error('Error in Fetching Patient Details: ', error)
+      }
+    }
 
-  //   fetchDetails()
-  // }, [])
+    fetchDetails()
+  }, [])
 
   async function onSubmit() {
     try {
@@ -114,15 +107,16 @@ const PatientDetail = () => {
         fullname,
         email,
         patientPhone,
-        dob: value?.format('YYYY-MM-DD') || '',
+        dob: value?.format('MMMM D, YYYY') || '',
         gender,
         address,
         emergenyPhone,
-        EmergencyContactName,
+        emergencyContactName,
         allergies,
         medications,
         medicalHistory,
-        familyMedicalHistory
+        familyMedicalHistory,
+        primaryPhysician
       })
 
       if(!parseData.success){
@@ -131,25 +125,29 @@ const PatientDetail = () => {
           showSnackbar(`${error.message}`, "error");
         });
       } else {
-        const response = await axios.post('/', {
+        const response = await axios.post('http://localhost:3000/api/v1/patient/registerPatient', {
           fullname,
           email,
           patientPhone,
-          dob: value?.format('YYYY-MM-DD'),
+          dob: value?.format('MMMM D, YYYY'),
           gender,
           address,
           emergenyPhone,
-          EmergencyContactName,
+          emergencyContactName,
           allergies,
           medications,
           medicalHistory,
-          familyMedicalHistory
+          familyMedicalHistory,
+          primaryPhysician
         })
 
-        console.log(response.data.message)
-
-        showSnackbar('Patient details submitted successfully!', 'success');
-        navigate('/Appointment')
+        if(response.status === 200){
+          showSnackbar('Patient details submitted successfully!', 'success');
+          navigate('/Appointment')
+        }
+        else {
+          showSnackbar('Error in Posting Patient Details', 'error');
+        }
 
       }
 
@@ -308,7 +306,7 @@ const PatientDetail = () => {
         </Typography>
         <div className="flex-col gap-6">
           <TextField
-            value={physician}
+            value={primaryPhysician}
             onChange={handleChange}
             id="outlined-select-currency"
             select
@@ -318,8 +316,8 @@ const PatientDetail = () => {
             sx={{ mb: 3 }}
           >
             {doctors.map((doctor, index) => (
-              <MenuItem key={index} value={doctor.name}>
-                {doctor.name}
+              <MenuItem key={index} value={doctor.id}>
+                {doctor.fullname}
               </MenuItem>
             ))}
           </TextField>
