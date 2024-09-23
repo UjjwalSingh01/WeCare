@@ -1,22 +1,21 @@
 import { Typography, Box } from '@mui/material';
 import Navbar from '../components/Navbar';
 import InfoCard from '../components/InfoCard';
-import ScheduleTable from '../components/ScheduleTable';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import DoctorDetailModal from '../components/DoctorDetailModal';
 import BasicModal from '../components/BasicModel';
 import MonthInfoCard from '../components/MonthInfoCard';
+import SubAdminScheduleTable from '../components/SubAdminScheduleTable';
 
 interface MonthlyDetails {
   currentMonthAppointments: number;
   lastMonthAppointments: number;
 }
 
-interface AppointmentDetails {
+export interface SubAppointmentsDetails {
   patientName: string;
   reason: string;
-  note: string | null;
   date: string;
   time: string;
   status: 'ACTIVE' | 'CANCELLED' | 'COMPLETED';
@@ -29,24 +28,32 @@ const SubAdminPanel = () => {
     lastMonthAppointments:92
   });
   const [totalAppointments, setTotalAppointments] = useState(192)
-  const [appointments, setAppointments] = useState<AppointmentDetails>();
+  const [appointments, setAppointments] = useState<SubAppointmentsDetails[]>([
+    {
+      patientName: 'John Doe',
+      reason: 'Headache',
+      date: 'September 23, 2024',
+      time: '11:00 AM',
+      status: 'ACTIVE'
+    }
+  ]);
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      try {
-        const response = await axios.get('');
+  // useEffect(() => {
+  //   const fetchDetails = async () => {
+  //     try {
+  //       const response = await axios.get('');
 
-        setName(response.data.name);
-        setMonthly(response.data.monthly);
-        setTotalAppointments(response.data.totalAppointments)
-        setAppointments(response.data.appointments);
-      } catch (error) {
-        console.error('Error in Fetching Notification: ', error);
-      }
-    };
+  //       setName(response.data.name);
+  //       setMonthly(response.data.monthly);
+  //       setTotalAppointments(response.data.totalAppointments)
+  //       setAppointments(response.data.appointments);
+  //     } catch (error) {
+  //       console.error('Error in Fetching Notification: ', error);
+  //     }
+  //   };
 
-    fetchDetails();
-  }, []);
+  //   fetchDetails();
+  // }, []);
 
   return (
     <div className='w-screen min-h-screen bg-gray-100'>
@@ -55,7 +62,7 @@ const SubAdminPanel = () => {
       {/* Header Section */}
       <Box
         sx={{
-          padding: { xs: 2, md: 4 }, // Responsive padding for smaller to larger screens
+          padding: { xs: 2, md: 4 },
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -105,7 +112,7 @@ const SubAdminPanel = () => {
             overflowX: 'auto', // Handle table overflow on small screens
           }}
         >
-          <ScheduleTable appointments={appointments} />
+          <SubAdminScheduleTable appointments={appointments} />
         </Box>
       </Box>
     </div>

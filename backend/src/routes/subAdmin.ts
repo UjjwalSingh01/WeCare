@@ -103,7 +103,7 @@ router.get('/dashbaord', async(req, res) => {
         const appointmentDetails = appointments.map((appointment) => ({
             patientName: appointment.patient.fullname,
             reason: appointment.reason,
-            note: appointment.note,
+            // note: appointment.note,
             date: appointment.date,
             time: appointment.time,
             status: appointment.status

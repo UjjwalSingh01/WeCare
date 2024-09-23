@@ -13,19 +13,19 @@ export default function InfoCard({data, heading}: {data: number, heading: string
       sx={{
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center', // Center vertically
+        alignItems: 'center', 
         width: '100%',
-        height: '100%', // Ensure the Box takes full height
+        height: '100%',
         textAlign: 'center',
-        padding: { xs: 2, sm: 4, md: 2 }, // Padding around the outer Box
+        padding: { xs: 2, sm: 4, md: 2 },
       }}
     >
       <Card
         sx={{
           width: { xs: '100%', sm: '90%', md: '80%', lg: '90%' },
-          maxWidth: 600, // Optional max width to prevent the card from getting too wide
+          maxWidth: 600, 
           borderRadius: 4,
-          boxShadow: 6, // Adding shadow for depth
+          boxShadow: 6, 
           transition: 'transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease',
           border: `2px solid ${theme.palette.background.default}`,
           '&:hover': {
@@ -34,9 +34,9 @@ export default function InfoCard({data, heading}: {data: number, heading: string
             borderColor: theme.palette.primary.main,
           },
           display: 'flex',
-          flexDirection: 'column', // Ensure the content inside the card is vertically stacked
-          justifyContent: 'center', // Center content vertically inside the card
-          alignItems: 'center', // Center content horizontally inside the card
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
           backgroundColor: 'background.paper',
           padding: 2,
         }}

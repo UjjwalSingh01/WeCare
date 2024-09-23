@@ -54,7 +54,7 @@ router.post('/get-appointment', async(req, res) => {
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             appointments: result,
             doctors: doctors
         })
@@ -88,7 +88,8 @@ router.post('/make-appointment', async(req, res) => {
 
         const response = await prisma.appointment.count({
             where:{
-                patientId: patientId
+                patientId: patientId,
+                status: 'ACTIVE'
             }
         })
 
@@ -108,7 +109,7 @@ router.post('/make-appointment', async(req, res) => {
 
         if(duplicateAppointment){
             return res.status(409).json({
-                error: "Appointment at this date and time already Active",
+                error: "Appointment is Not Available at this date and time",
             });
         }
 
@@ -154,6 +155,18 @@ router.post('/cancel-appointment', async(req, res) => {
     try {
         const appointmentId: string = await req.body
 
+        const appointment = await prisma.appointment.findFirst({
+            where:{
+                id: appointmentId
+            }
+        })
+
+        if(!appointment){
+            return res.status(200).json({
+                error: "Appointment Not Present"
+            })
+        }
+
         await prisma.appointment.update({
             where:{
                 id: appointmentId,
@@ -163,7 +176,7 @@ router.post('/cancel-appointment', async(req, res) => {
             }
         })
 
-        return res.json({
+        return res.status(200).json({
             message: 'Appointment Cancelled Successfully'
         })
 

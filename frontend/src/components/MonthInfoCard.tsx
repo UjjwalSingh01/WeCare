@@ -47,12 +47,12 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
               justifyContent: 'center',
               alignItems: 'center',
               textAlign: 'center',
-              width: '100%',
+              // width: '100%',
             }}
           >
             <Typography
               sx={{
-                fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
+                fontSize: { xs: '1.00rem', sm: '1.25rem', md: '2rem' },
                 fontWeight: 'bold',
                 color: theme.palette.primary.main,
                 marginRight: 2, // Space between the label and the value
@@ -88,7 +88,7 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
         >
           <Typography
             sx={{
-              fontSize: { xs: '0.9rem', sm: '1rem', md: '1.25rem' },
+              fontSize: { xs: '0.75rem', sm: '1.00rem', md: '1.25rem' },
               fontWeight: 'normal',
               color: 'text.secondary',
               marginRight: 1,
@@ -100,7 +100,7 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
             variant="h6"
             component="div"
             sx={{
-              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
+              fontSize: { xs: '0.75rem', sm: '1.00rem', md: '1.25rem' },
               fontWeight: 500,
               color: 'text.secondary',
             }}

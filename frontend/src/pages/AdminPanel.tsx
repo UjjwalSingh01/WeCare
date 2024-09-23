@@ -4,7 +4,7 @@ import InfoCard from '../components/InfoCard';
 import BasicModal from '../components/BasicModel';
 import RemoveModal from '../components/RemoveModal';
 import DoctorDetailModal from '../components/DoctorDetailModal';
-import ScheduleTable from '../components/ScheduleTable';
+import ScheduleTable from '../components/AdminScheduleTable';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import MonthInfoCard from '../components/MonthInfoCard';
@@ -21,21 +21,43 @@ interface RemoveDetails {
 }
 
 export interface AppointmentsDetails {
-    doctor: string,
-    patient: string,
+    doctorname: string,
+    patientname: string,
     date: string,
     time: string,
     status: 'ACTIVE' | 'CANCELLED' | 'COMPLETED'
 }
 
 const AdminPanel = () => {
-   const [name, setName] = useState('')
+   const [name, setName] = useState('Admin')
    const [total, setTotal] = useState(10)
    const [monthly, setMonthly] = useState<MonthDetails>({
     currentMonthAppointments: 10,
     lastMonthAppointments: 5
    })
-   const [appointments, setAppointments] = useState<AppointmentsDetails[]>([])
+   const [appointments, setAppointments] = useState<AppointmentsDetails[]>([
+    {
+      doctorname: 'Dr. Jai',
+      patientname: 'John Doe',
+      date: 'September 23, 2024',
+      time: '11:00 AM',
+      status: 'ACTIVE'
+    } , 
+    {
+      doctorname: 'Dr. dev',
+      patientname: 'Jane Doe',
+      date: 'November 23, 2024',
+      time: '01:00 PM',
+      status: 'CANCELLED' 
+    } , 
+    {
+      doctorname: 'Dr. Hahaha',
+      patientname: 'Edo Hon',
+      date: 'JUly 23, 2024',
+      time: '11:00 AM',
+      status: 'COMPLETED'
+    }
+   ])
    const [doctors, setDoctor] = useState<RemoveDetails[]>([])
    const [doctorCount, setDoctorCount] = useState(15)
    const [admins, setAdmins] = useState<RemoveDetails[]>([])

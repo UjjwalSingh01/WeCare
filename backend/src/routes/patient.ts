@@ -64,6 +64,8 @@ router.get('/get-patient', async(req, res) => {
             }
         })
 
+        res.clearCookie('patientTemp')
+
         return res.json({
             fullname: detail.fullname,
             email: detail.email,

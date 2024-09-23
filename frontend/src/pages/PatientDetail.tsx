@@ -160,21 +160,21 @@ const PatientDetail = () => {
   return (
     <Card 
         sx={{
-            width: { xs: '95%', md: '90%' }, // Adjusts to 95% on smaller screens and 90% on larger screens
-            mx: 'auto', // Centers the card horizontally
-            my: 3, // Adds vertical margin
+            width: { xs: '95%', md: '90%' },
+            mx: 'auto',
+            my: 3,
             overflowY: 'auto',
             scrollbarWidth: 'none',
             '&::-webkit-scrollbar': { display: 'none' },
             // py: 1,
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease', // Smooth transition for hover effect
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Default shadow
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
             '&:hover': {
-                transform: 'translateY(-10px)', // Moves the card up by 10px
-                boxShadow: '0px 10px 24px rgba(0, 0, 0, 0.2)', // Increases shadow on hover
+                transform: 'translateY(-10px)',
+                boxShadow: '0px 10px 24px rgba(0, 0, 0, 0.2)',
             },
-            backgroundColor: 'background.paper', // Uses theme background color
-            borderRadius: '12px', // Smooth border
+            backgroundColor: 'background.paper',
+            borderRadius: '12px',
         }}
     >
   <div className="h-screen flex">
@@ -418,12 +418,12 @@ const PatientDetail = () => {
         onClose={() => setOpenSnackbar(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         sx={{
-          width: '400px', // Control width
+          width: '400px',
           borderRadius: '8px',
           boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
           padding: '0',
           '& .MuiSnackbarContent-root': {
-            padding: 0, // Remove default padding
+            padding: 0,
           },
         }}
       >
@@ -434,15 +434,15 @@ const PatientDetail = () => {
             background: snackbarSeverity === 'success'
               ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
               : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff', // Text color
-            fontSize: '1.1rem', // Larger font
-            fontWeight: 'bold', // Bold text
-            borderRadius: '8px', // Rounded corners
-            padding: '16px', // Padding inside Alert
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Add shadow
-            width: '100%', // Take up the full Snackbar width
+            color: '#fff',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            padding: '16px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            width: '100%',
             '& .MuiAlert-icon': {
-              fontSize: '28px', // Larger icon size
+              fontSize: '28px',
             },
           }}
         >

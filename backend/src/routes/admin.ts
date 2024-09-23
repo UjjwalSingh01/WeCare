@@ -25,7 +25,6 @@ router.post('/admin', async(req, res) => {
     try {
         const detail: AdminDetail = await req.body;
 
-        // search admin
         const response = await prisma.admin.findFirst({
             where:{
                 email: detail.email
@@ -137,8 +136,8 @@ router.get('/admin-dashboard', async(req, res) => {
         })
 
         const appointments = appointment.map(appointment => ({
-            doctor: appointment.doctor.fullname,
-            patient: appointment.patient.fullname,
+            doctorname: appointment.doctor.fullname,
+            patientname: appointment.patient.fullname,
             date: appointment.date,
             time: appointment.time,
             status: appointment.status

@@ -78,7 +78,7 @@ const Appointment = () => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const response = await axios.get('/')
+        const response = await axios.get('http://localhost:3000/api/v1/appointment/get-appointment')
 
         setAppointments(response.data.result)
         setDoctors(response.data.doctors)
@@ -112,10 +112,6 @@ const Appointment = () => {
 
 
   async function onSubmit() {
-    // CHECK 1: SCHEDULE , REASON , PHYSICIAN MUST NOT BE EMPTY
-    // CHECK 2: USE SNACKBAR & ALERT TO SHOW ERRORS
-    // IF SLOT IS NOT AVAILABLE SHOW SNACKBAR
-
     try {
       if(schedule === null || reason === "" || physician === ""){ 
         showSnackbar("Error in Form", "error");
@@ -144,12 +140,17 @@ const Appointment = () => {
 
   async function handleCancel(id: string) {
     try {
-      await axios.post('http://localhost:3000/api/v1/appointment/cancel-appointment', {
+      const response = await axios.post('http://localhost:3000/api/v1/appointment/cancel-appointment', {
         id
       })
 
-      showSnackbar("Appointment Cancelled Successfully", "success");
-
+      if(response.status === 200){
+        showSnackbar("Appointment Cancelled Successfully", "success");
+      }
+      else {
+        showSnackbar(`${response.data.error}`, "error");
+      }
+      
     } catch (error) {
       showSnackbar("Error in Cancelling Appointments", "error");
       console.error('Error in Cancelling Appointments: ', error)
