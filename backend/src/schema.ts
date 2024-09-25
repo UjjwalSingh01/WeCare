@@ -13,7 +13,7 @@ type registerType = z.infer<typeof registerSchema>
 const patientSchema = z.object({
     email: z.string().email('Enter Correct Email Format'),
     fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
-    patientPhone :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+    phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
     dob: z.string(),
     gender: z.enum(['Male', 'Female' , 'Other']),
     address: z.string(),

@@ -18,9 +18,14 @@ const router = express.Router();
 
 router.get('/get-doctor', async(req, res) => {
     try {
-        const doctors = await prisma.doctor.findMany()
+        const doctors = await prisma.doctor.findMany({
+            select:{
+                id: true,
+                fullname: true
+            }
+        })
 
-        return res.json({
+        return res.status(200).json({
             doctor: doctors
         })
 

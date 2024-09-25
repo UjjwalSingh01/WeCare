@@ -38,22 +38,23 @@ const SubAdminPanel = () => {
     }
   ]);
 
-  // useEffect(() => {
-  //   const fetchDetails = async () => {
-  //     try {
-  //       const response = await axios.get('');
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/v1/subAdmin/subAdmin-dashboard');
 
-  //       setName(response.data.name);
-  //       setMonthly(response.data.monthly);
-  //       setTotalAppointments(response.data.totalAppointments)
-  //       setAppointments(response.data.appointments);
-  //     } catch (error) {
-  //       console.error('Error in Fetching Notification: ', error);
-  //     }
-  //   };
+        setName(response.data.name);
+        setMonthly(response.data.monthly);
+        setTotalAppointments(response.data.totalAppointments)
+        setAppointments(response.data.appointments);
 
-  //   fetchDetails();
-  // }, []);
+      } catch (error) {
+        console.error('Error in Fetching Sub Admin Dashboard: ', error);
+      }
+    };
+
+    fetchDetails();
+  }, []);
 
   return (
     <div className='w-screen min-h-screen bg-gray-100'>
@@ -76,8 +77,8 @@ const SubAdminPanel = () => {
           sx={{
             fontWeight: 'bold',
             color: '#333',
-            paddingLeft: { xs: 1, md: 2 }, // Adjust left padding for smaller screens
-            fontSize: { xs: '1.5rem', md: '2rem' }, // Adjust font size for smaller screens
+            paddingLeft: { xs: 1, md: 2 },
+            fontSize: { xs: '1.5rem', md: '2rem' },
           }}
         >
           Welcome, {name}
@@ -93,8 +94,8 @@ const SubAdminPanel = () => {
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, // Responsive grid
-            gap: { xs: 2, md: 4 }, // Space between cards adjusts with screen size
-            marginBottom: { xs: 3, md: 5 }, // Adjust margin for responsiveness
+            gap: { xs: 2, md: 4 },
+            marginBottom: { xs: 3, md: 5 },
           }}
         >
           <MonthInfoCard data={monthly} />
@@ -109,7 +110,7 @@ const SubAdminPanel = () => {
             backgroundColor: '#fff',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             borderRadius: '10px',
-            overflowX: 'auto', // Handle table overflow on small screens
+            overflowX: 'auto',
           }}
         >
           <SubAdminScheduleTable appointments={appointments} />

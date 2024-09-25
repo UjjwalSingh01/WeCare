@@ -25,7 +25,7 @@ interface SubAdminDetail {
     pin: string
 }
 
-router.post('/subadmin', async(req, res) => {
+router.post('/subadmin-login', async(req, res) => {
     try {
         const detail: SubAdminDetail = await req.body;
 
@@ -41,7 +41,7 @@ router.post('/subadmin', async(req, res) => {
             })
         }
 
-        if(response.id != detail.pin){
+        if(response.pin != detail.pin){
             return res.status(401).json({
                 error: 'Invalid Pin'
             })
@@ -66,7 +66,7 @@ router.post('/subadmin', async(req, res) => {
     }
 })
 
-router.get('/dashbaord', async(req, res) => {
+router.get('/subAdmin-dashbaord', async(req, res) => {
     try {
         const subAdminId: string = req.cookies.subAdmin
 
@@ -103,7 +103,6 @@ router.get('/dashbaord', async(req, res) => {
         const appointmentDetails = appointments.map((appointment) => ({
             patientName: appointment.patient.fullname,
             reason: appointment.reason,
-            // note: appointment.note,
             date: appointment.date,
             time: appointment.time,
             status: appointment.status
@@ -112,12 +111,12 @@ router.get('/dashbaord', async(req, res) => {
         const now = dayjs();
   
         // Get start and end dates of the current month (formatted as 'YYYY-MM-DD')
-        const startOfCurrentMonth = now.startOf('month').format('YYYY-MM-DD');
-        const endOfCurrentMonth = now.endOf('month').format('YYYY-MM-DD');
+        const startOfCurrentMonth = now.startOf('month').format('MMMM D, YYYY');
+        const endOfCurrentMonth = now.endOf('month').format('MMMM D, YYYY');
 
         // Get start and end dates of the last month (formatted as 'YYYY-MM-DD')
-        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
-        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('MMMM D, YYYY');
+        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('MMMM D, YYYY');
         
         // Count appointments in the current month
         const currentMonthAppointments = await prisma.appointment.count({
@@ -213,7 +212,7 @@ router.post('/update-profile', async(req, res) => {
 
 
 router.post('/update', async(req, res) => {
-    const appointmentsToUpdate: { id: string, status: Status }[] = req.body;
+    const appointmentsToUpdate: { id: string, status: Status }[] = await req.body;
 
     try {
         await Promise.all(

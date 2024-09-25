@@ -5,7 +5,7 @@ import Modal from '@mui/material/Modal';
 import TextField from '@mui/material/TextField';
 import { useState } from 'react';
 import axios from 'axios';
-import { Alert, Snackbar } from '@mui/material';
+import { Alert, FormControl, InputLabel, MenuItem, Select, Snackbar } from '@mui/material';
 
 const style = {
   position: 'absolute' as 'absolute',
@@ -27,17 +27,17 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
   const [fullname, setFullname] = useState('')
   const [email, setEmail] = useState('')
   const [pin, setPin] = useState('')
-//   const [allowRemove, setAllowRemove] = useState(false);
+  const [removeFacilities, setRemoveFacilities] = useState(false);
 
-    const [openSnackbar, setOpenSnackbar] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState("");
-    const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
 
-    const showSnackbar = (message: string, severity: "success" | "error") => {
+  const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setOpenSnackbar(true);
-    };
+  };
 
   async function onSubmit() {
 
@@ -58,9 +58,11 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
 
         if(response.status === 200){
             showSnackbar(`${response.data.message}`, "success");
+            handleClose()
         }
         else {
             showSnackbar(`${response.data.error}`, "error");
+            return;
         }
 
     } catch(error) {
@@ -68,7 +70,6 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
         console.log('Error in Basic Model: ', error)
     }
 
-    handleClose()
   }
 
   return (
@@ -135,6 +136,24 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
               fullWidth
               InputLabelProps={{ style: { color: '#1976d2' } }} 
             />
+
+            {heading === 'Add Admin' && (
+              <FormControl fullWidth>
+                <InputLabel id="remove-facilities-label">Remove Facilities</InputLabel>
+                <Select
+                  labelId="remove-facilities-label"
+                  id="remove-facilities-select"
+                  value={removeFacilities}
+                  label="Remove Facilities"
+                  onChange={(e) => setRemoveFacilities(e.target.value === 'true')}
+                >
+                  <MenuItem value="true">True</MenuItem>
+                  <MenuItem value="false">False</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+
+            
           </Box>
 
           <Button

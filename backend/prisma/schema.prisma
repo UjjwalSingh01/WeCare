@@ -35,7 +35,7 @@ model Patient {
 
 model Doctor {
   id                String    @id @default(uuid())
-  fullname              String
+  fullname          String
   email             String    @unique
   specializations   String[]     // Array of specializations
   hospitals         String[]     // Array of hospital names

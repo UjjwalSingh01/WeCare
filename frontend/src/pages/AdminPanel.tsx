@@ -66,7 +66,6 @@ const AdminPanel = () => {
    useEffect(() => {
     const fetchDetails = async () => {
         try {
-            
             const response = await axios.get('http://localhost:3000/api/v1/admin/admin-dashboard')
 
             setName(response.data.name)
@@ -202,6 +201,7 @@ const AdminPanel = () => {
       </Box>
 
       <Divider /> 
+      
       <Box
         sx={{
             p:5

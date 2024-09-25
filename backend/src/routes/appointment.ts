@@ -14,12 +14,9 @@ app.use(cookieParser());
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
-// CHECK 1: A PATIENT CANNOT HAVE 5 ACTIVE APPOINTMENTS
-// CHECK 2: A PATIENT CANNOT MAKE APPOINTMENT AFTER 6 MONTHS
-
 const router = express.Router();
 
-router.post('/get-appointment', async(req, res) => {
+router.get('/get-appointment', async(req, res) => {
     try {
         const patientId = await req.cookies.Patient
 
@@ -68,17 +65,18 @@ router.post('/get-appointment', async(req, res) => {
     }
 })
 
+
 router.post('/make-appointment', async(req, res) => {
     try {
         const detail: appointmentType = await req.body
-        const zodResult = await appointmentSchema.safeParse(detail)
+        const zodResult = appointmentSchema.safeParse(detail)
         if(!zodResult.success){
             return res.status(401).json({
                 error: 'Invalid Credentials'
             })
         }
 
-        const patientId = await req.cookies.patient
+        const patientId = await req.cookies.Patient
 
         if(!patientId){
             return res.status(401).json({

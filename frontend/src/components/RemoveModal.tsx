@@ -62,7 +62,8 @@ export default function RemoveModal({ heading, data }: { heading: string, data: 
             showSnackbar(`${response.data.message}`, "success");
         }
         else {
-            showSnackbar(`${response.data.error}`, 'error')
+            showSnackbar(`${response.data.error}`, 'error');
+            return;
         }
 
         handleClose();

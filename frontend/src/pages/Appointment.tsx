@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { TextField, MenuItem, Button, Typography, Snackbar, Alert } from '@mui/material';
+import { TextField, MenuItem, Button, Typography, Snackbar, Alert, Card, CardContent, CardActions } from '@mui/material';
 import dayjs, {Dayjs} from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import axios from 'axios';
 import { DoctorDetails } from './PatientDetail';
 
-
-// interface DoctorDetails {
-//   id: string,
-//   fullname: string
-// }
 
 interface AppointmentDetails {
   appointmentId: string;
@@ -19,7 +14,6 @@ interface AppointmentDetails {
   date: string;
   time: string;
 }
-
 
 const Appointment = () => {
   const [schedule, setSchedule] = useState<Dayjs | null>(null);
@@ -72,9 +66,7 @@ const Appointment = () => {
     setOpenSnackbar(true);
   };
 
-  // useEffect 
-  // for getting all the doctors
-  // for getting active appointments
+
   useEffect(() => {
     const fetchDetails = async () => {
       try {
@@ -104,34 +96,34 @@ const Appointment = () => {
     return false;
   };
 
-
   // Handler for dropdown change
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPhysician(event.target.value);
   };
 
-
   async function onSubmit() {
     try {
       if(schedule === null || reason === "" || physician === ""){ 
         showSnackbar("Error in Form", "error");
+        return;
+      }
+      
+      const response = await axios.post('http://localhost:3000/api/v1/appointment/make-appointment', {
+        physician,
+        reason,
+        note,
+        date: schedule.format('MMMM D, YYYY'),
+        time: schedule.format('hh:mm A')
+      })
+
+      if(response.status === 200){
+        showSnackbar("Appointment Completed", "success");
       }
       else {
-        const response = await axios.post('http://localhost:3000/api/v1/appointment/make-appointment', {
-          physician,
-          reason,
-          note,
-          date: schedule.format('MMMM D, YYYY'),
-          time: schedule.format('hh:mm A')
-        })
-  
-        if(response.status === 200){
-          showSnackbar("Appointment Completed", "success");
-        }
-        else {
-          showSnackbar(`${response.data.error}`, "error");
-        }
+        showSnackbar(`${response.data.error}`, "error");
+        return;
       }
+      
     } catch (error) {
       showSnackbar("Error in Appointment Submission", "error");
       console.error('Error in Appointment Submission: ', error)
@@ -149,6 +141,7 @@ const Appointment = () => {
       }
       else {
         showSnackbar(`${response.data.error}`, "error");
+        return;
       }
       
     } catch (error) {
@@ -278,18 +271,39 @@ const Appointment = () => {
         </section>
 
         <div className="bg-blue-400 w-[90%] sm:w-[425px] h-[50%] sm:h-[80%] shadow-2xl flex justify-center items-center rounded-tl-[100px] rounded-br-[100px] absolute top-[20%] sm:top-[10%] left-[10%] sm:left-[25%] transform -translate-x-1/2 rounded-lg transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl">
-            <div className="bg-red-700 h-[90%] w-[90%]">
-                active Appointment
-                {appointments.map(appointment => {
-                  return (
-                    <div>
-                      {appointment.doctorName}
-                      {appointment.date} {appointment.time}
-                      <Button onClick={() => {handleCancel(appointment.appointmentId)}} variant='text'>Cancel</Button>
-                    </div>
-                  )
-                })}
+          <div className="bg-gradient-to-br from-red-600 to-red-700 p-6 rounded-lg shadow-lg h-[90%] w-[90%] overflow-y-auto">
+            <Typography variant="h5" component="h2" className="text-white font-bold mb-4">
+              Active Appointments
+            </Typography>
+            <div className="space-y-4">
+              {appointments.map((appointment) => {
+                return (
+                  <Card className="bg-white shadow-md rounded-lg p-4 hover:shadow-xl transition-shadow duration-300">
+                    <CardContent>
+                      <Typography variant="h6" component="div" className="text-gray-800 font-semibold">
+                        Dr. {appointment.doctorName}
+                      </Typography>
+                      <Typography variant="body2" component="p" className="text-gray-600">
+                        Date: {appointment.date} | Time: {appointment.time}
+                      </Typography>
+                    </CardContent>
+                    <CardActions className="flex justify-end">
+                      <Button
+                        onClick={() => handleCancel(appointment.appointmentId)}
+                        variant="contained"
+                        color="secondary"
+                        className="bg-red-500 hover:bg-red-600 text-white rounded-full"
+                        sx={{ px: 3, py: 1, borderRadius: '20px' }}
+                      >
+                        Cancel
+                      </Button>
+                    </CardActions>
+                  </Card>
+                );
+              })}
             </div>
+          </div>
+
         </div>
 
         <Snackbar
@@ -298,12 +312,12 @@ const Appointment = () => {
           onClose={() => setOpenSnackbar(false)}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           sx={{
-            width: '400px', // Control width
+            width: '400px',
             borderRadius: '8px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
             padding: '0',
             '& .MuiSnackbarContent-root': {
-              padding: 0, // Remove default padding
+              padding: 0,
             },
           }}
         >
@@ -314,15 +328,15 @@ const Appointment = () => {
             background: snackbarSeverity === 'success'
               ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
               : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff', // Text color
-            fontSize: '1.1rem', // Larger font
-            fontWeight: 'bold', // Bold text
-            borderRadius: '8px', // Rounded corners
-            padding: '16px', // Padding inside Alert
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Add shadow
-            width: '100%', // Take up the full Snackbar width
+            color: '#fff',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            padding: '16px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            width: '100%',
             '& .MuiAlert-icon': {
-              fontSize: '28px', // Larger icon size
+              fontSize: '28px',
             },
           }}
         >

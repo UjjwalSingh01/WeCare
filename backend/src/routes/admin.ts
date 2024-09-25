@@ -21,13 +21,13 @@ interface AdminDetail {
     pin: string
 }
 
-router.post('/admin', async(req, res) => {
+router.post('/admin-login', async(req, res) => {
     try {
         const detail: AdminDetail = await req.body;
 
         const response = await prisma.admin.findFirst({
             where:{
-                email: detail.email
+                email: detail.email,
             }
         })
 
@@ -50,7 +50,6 @@ router.post('/admin', async(req, res) => {
             sameSite: "lax",
         });
 
-        // verfied then navigate to admin page
         return res.status(200).json({
             message: 'Verified'
         })
@@ -89,21 +88,21 @@ router.get('/admin-dashboard', async(req, res) => {
 
         const now = dayjs();
   
-        // Get start and end dates of the current month (formatted as 'YYYY-MM-DD')
-        const startOfCurrentMonth = now.startOf('month').format('YYYY-MM-DD');
-        const endOfCurrentMonth = now.endOf('month').format('YYYY-MM-DD');
+        // Get start and end dates of the current month (formatted as 'MMMM D, YYYY')
+        const startOfCurrentMonth = now.startOf('month').format('MMMM D, YYYY');
+        const endOfCurrentMonth = now.endOf('month').format('MMMM D, YYYY');
 
-        // Get start and end dates of the last month (formatted as 'YYYY-MM-DD')
-        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
-        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+        // Get start and end dates of the last month (formatted as 'MMMM D, YYYY')
+        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('MMMM D, YYYY');
+        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('MMMM D, YYYY');
         
         // Count appointments in the current month
         const currentMonthAppointments = await prisma.appointment.count({
             where: {
-            date: {
-                gte: startOfCurrentMonth,
-                lte: endOfCurrentMonth,
-            },
+                date: {
+                    gte: startOfCurrentMonth,
+                    lte: endOfCurrentMonth,
+                },
             },
         });
 
@@ -150,7 +149,7 @@ router.get('/admin-dashboard', async(req, res) => {
             }
         })
 
-        let admins: any = [];
+        let admins: {fullname: string, id: string}[] = [];
         if(name?.removeFacility === true){
             admins = await prisma.admin.findMany({
                 select:{
@@ -160,18 +159,17 @@ router.get('/admin-dashboard', async(req, res) => {
             })
         }
 
-        return res.json({
+        return res.status(200).json({
             name: name?.fullname,
             doctors: doctors,
-            doctorCount: doctors.length,
             subadmins: subadmin,
             admins: admins,
+            doctorCount: doctors.length,
             total: totalAppointment,
             monthly: { currentMonthAppointments, lastMonthAppointments },
             appointments: appointments,
         })
         
-
     } catch (error) {
         console.error("Error in Admin DashBoard Details:", error);
         return res.status(500).json({ 
@@ -184,7 +182,7 @@ router.get('/admin-dashboard', async(req, res) => {
 router.post('/add-admin', async(req, res) => {
     try {
         const detail: AddAdminType = await req.body;
-        const zodResult = await AddAdminSchema.safeParse(detail)
+        const zodResult = AddAdminSchema.safeParse(detail)
         if(!zodResult.success){
             return res.status(401).json({
                 error: 'InValid Credentials'
@@ -196,7 +194,7 @@ router.post('/add-admin', async(req, res) => {
                 fullname: detail.fullname,
                 email: detail.email,
                 pin: detail.pin,
-                removeFacility: false
+                removeFacility: detail.removeFacility
             }
         })
 
@@ -214,7 +212,7 @@ router.post('/add-admin', async(req, res) => {
 
 router.post('/remove-admin', async(req, res) => {
     try {
-        const adminId = await req.body
+        const { adminId } : { adminId: string } = await req.body
 
         const response = await prisma.admin.findFirst({
             where:{
@@ -230,7 +228,8 @@ router.post('/remove-admin', async(req, res) => {
 
         await prisma.admin.delete({
             where:{
-                id: adminId
+                id: adminId,
+                email: response.email
             }
         })
 
@@ -251,10 +250,22 @@ router.post('/remove-admin', async(req, res) => {
 router.post('/add-subadmin', async(req, res) => {
     try {
         const detail: AddSubAdminType = await req.body;
-        const zodResult = await AddSubAdminSchema.safeParse(detail)
+        const zodResult = AddSubAdminSchema.safeParse(detail)
         if(!zodResult.success){
             return res.status(401).json({
                 error: 'InValid Credentials'
+            })
+        }
+
+        const response = await prisma.subAdmin.findFirst({
+            where: {
+                id: detail.email
+            }
+        })
+
+        if(response){
+            return res.status(401).json({
+                error: "Sub-Admin Already Exists"
             })
         }
 
@@ -280,7 +291,7 @@ router.post('/add-subadmin', async(req, res) => {
 
 router.post('/remove-subadmin', async(req, res) => {
     try {
-        const SubAdminId: string = await req.body
+        const {SubAdminId}: {SubAdminId: string} = await req.body
 
         const response = await prisma.subAdmin.findFirst({
             where:{
@@ -296,7 +307,8 @@ router.post('/remove-subadmin', async(req, res) => {
 
         await prisma.subAdmin.delete({
             where:{
-                id: SubAdminId
+                id: SubAdminId,
+                email: response.email
             }
         })
 
@@ -320,6 +332,18 @@ router.post('/add-doctor', async(req, res) => {
             return res.status(400).json({
                 error: "Invalid Request",
               });
+        }
+
+        const response = await prisma.doctor.findFirst({
+            where:{
+                email: details.email
+            }
+        })
+
+        if(response) {
+            return res.status(401).json({
+                "error": "Doctor Already Exists"
+            })
         }
 
         await prisma.doctor.create({
@@ -348,7 +372,7 @@ router.post('/add-doctor', async(req, res) => {
 
 router.post('/remove-doctor', async(req, res) => {
     try {
-        const DoctorId: string = await req.body
+        const { DoctorId }: {DoctorId: string} = await req.body
 
         const response = await prisma.doctor.findFirst({
             where: {
@@ -364,7 +388,8 @@ router.post('/remove-doctor', async(req, res) => {
 
         await prisma.doctor.delete({
             where:{
-                id: DoctorId
+                id: DoctorId,
+                email: response.email
             }
         })
 

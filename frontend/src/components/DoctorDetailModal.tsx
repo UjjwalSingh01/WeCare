@@ -110,7 +110,7 @@ export default function DoctorDetailModal() {
           </Typography>
 
           <TextField
-            value={name}
+            value={fullname}
             onChange={(e) => setName(e.target.value)}
             id="outlined-name"
             label="Full Name"

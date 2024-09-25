@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 const schema = z.object({
   fullname: z.string().min(2, 'Full Name must be at least 2 characters long'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number must be at least 10 characters long'),
+  phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters long'),
   dob: z.string().nonempty('Date of Birth is required'),
   gender: z.string().nonempty('Gender is required'),
   address: z.string().optional(),
@@ -49,7 +49,7 @@ const PatientDetail = () => {
 
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('')
-  const [patientPhone, setPatientPhone] = useState<string | undefined>('');
+  const [phoneNumber, setPatientPhone] = useState<string | undefined>('');
   const [value, setValue] = useState<Dayjs | null>(dayjs(''));
   const [gender, setGender] = useState('')
   const [address, setAddress] = useState('')
@@ -106,7 +106,7 @@ const PatientDetail = () => {
       const parseData = await schema.safeParse({
         fullname,
         email,
-        patientPhone,
+        phoneNumber,
         dob: value?.format('MMMM D, YYYY') || '',
         gender,
         address,
@@ -124,31 +124,32 @@ const PatientDetail = () => {
           console.log(error.message)
           showSnackbar(`${error.message}`, "error");
         });
-      } else {
-        const response = await axios.post('http://localhost:3000/api/v1/patient/registerPatient', {
-          fullname,
-          email,
-          patientPhone,
-          dob: value?.format('MMMM D, YYYY'),
-          gender,
-          address,
-          emergenyPhone,
-          emergencyContactName,
-          allergies,
-          medications,
-          medicalHistory,
-          familyMedicalHistory,
-          primaryPhysician
-        })
+        return;
+      } 
+      
+      const response = await axios.post('http://localhost:3000/api/v1/patient/registerPatient', {
+        fullname,
+        email,
+        phoneNumber,
+        dob: value?.format('MMMM D, YYYY'),
+        gender,
+        address,
+        emergenyPhone,
+        emergencyContactName,
+        allergies,
+        medications,
+        medicalHistory,
+        familyMedicalHistory,
+        primaryPhysician
+      })
 
-        if(response.status === 200){
-          showSnackbar('Patient details submitted successfully!', 'success');
-          navigate('/Appointment')
-        }
-        else {
-          showSnackbar('Error in Posting Patient Details', 'error');
-        }
-
+      if(response.status === 200){
+        showSnackbar('Patient details submitted successfully!', 'success');
+        navigate('/Appointment')
+      }
+      else {
+        showSnackbar('Error in Posting Patient Details', 'error');
+        return;
       }
 
     } catch (error) {
@@ -217,7 +218,7 @@ const PatientDetail = () => {
             />
             <PhoneInput
               placeholder="Enter phone number"
-              value={patientPhone}
+              value={phoneNumber}
               onChange={setPatientPhone}
               defaultCountry="IN"
               style={{
@@ -241,8 +242,8 @@ const PatientDetail = () => {
             </LocalizationProvider>
             <FormControl sx={{ width: '100%' }}>
               <RadioGroup
-                value={gender}  // bind the selected value
-                onChange={handleGenderChange}  // handle value change
+                value={gender} 
+                onChange={handleGenderChange}
                 row
                 name="gender"
                 sx={{ justifyContent: 'space-around' }}

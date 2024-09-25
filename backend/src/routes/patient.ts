@@ -19,12 +19,13 @@ const router = express.Router();
 
 router.post('/register', async(req, res) => {
     try {
-        const detail: registerType = await req.body
-        const zodResult = await registerSchema.safeParse(detail)
+        const detail: registerType = await req.body;
+
+        const zodResult = registerSchema.safeParse(detail)
         if(!zodResult.success){
             return res.status(400).json({
                 error: "Invalid Request",
-              });
+            });
         }
 
         res.cookie("patientTemp", detail, {
@@ -85,18 +86,28 @@ router.get('/get-patient', async(req, res) => {
 router.post('/registerPatient', async(req, res) => {
     try {
         const patientDetails: patientType = await req.body;
-        const zodResult = await registerSchema.safeParse(patientDetails)
+        const zodResult = registerSchema.safeParse(patientDetails)
         if(!zodResult.success){
+            console.error(zodResult.error.issues)
             return res.status(400).json({
                 error: "Invalid Request",
               });
         }
 
+        const existingPatient = await prisma.patient.findUnique({
+            where: { email: patientDetails.email },
+        });
+        
+        if (existingPatient) {
+            return res.status(400).json({ error: 'Email already exists.' });
+        }
+        
+
         const response = await prisma.patient.create({
             data: {
                 fullname: patientDetails.fullname,
                 email: patientDetails.email,
-                phoneNumber: patientDetails.patientPhone,
+                phoneNumber: patientDetails.phoneNumber,
                 DOB: patientDetails.dob,
                 gender: patientDetails.gender,
                 address: patientDetails.address,
@@ -129,7 +140,6 @@ router.post('/registerPatient', async(req, res) => {
         });
     }
 })
-
 
 router.post('/logout', async(req, res) => {
     try {
