@@ -6,6 +6,7 @@ import { Alert, Snackbar, TextField } from '@mui/material';
 import axios from 'axios';
 import { useState } from 'react';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -31,6 +32,8 @@ export default function PinModal() {
 
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('')
+
+  const navigate = useNavigate()
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -63,6 +66,10 @@ export default function PinModal() {
 
       if(response.status === 200){
         showSnackbar('Admin Login Successful', "success");
+        
+        if(response.data.message === "Admin") navigate('/AdminPanel')
+        else navigate('/SubAdminPanel')
+
       } else {
         showSnackbar('Admin Login UnSuccessful', "error");
         return

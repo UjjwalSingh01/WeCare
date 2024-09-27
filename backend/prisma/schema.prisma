@@ -37,28 +37,28 @@ model Doctor {
   id                String    @id @default(uuid())
   fullname          String
   email             String    @unique
-  specializations   String[]     // Array of specializations
-  hospitals         String[]     // Array of hospital names
+  specializations   String[]     
+  hospitals         String[]    
   about             String
-  rating            Float        // Rating out of 5
-  appointments      Appointment[] // Relation to Appointment model
+  admin             String?
+  rating            Float       
+  appointments      Appointment[]
 }
 
 model Appointment {
   id           String    @id @default(uuid())
-  doctorId     String      
-  doctor       Doctor    @relation(fields: [doctorId], references: [id])
+  doctorId     String
+  doctor       Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   patientId    String
-  patient      Patient   @relation(fields: [patientId], references: [id])
+  patient      Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
   reason       String
-  note         String?   
-  date         String 
-  time         String   
-  status       Status   
+  note         String?
+  date         String
+  time         String
+  status       Status
 
-  @@unique([doctorId, date, time], name: "uniqueDoctorAppointment") // Ensure unique date & time for the same doctor
-
-  @@index([doctorId, status], name: "doctorStatusIndex") // Index for efficient querying
+  @@unique([doctorId, date, time], name: "uniqueDoctorAppointment")
+  @@index([doctorId, status], name: "doctorStatusIndex") 
 }
 
 
@@ -75,6 +75,7 @@ model SubAdmin {
   fullname        String
   email           String    @unique
   pin             String
+  doctors         String[]
 }
 
 model Otp{

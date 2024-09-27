@@ -31,27 +31,52 @@ router.post('/admin-login', async(req, res) => {
             }
         })
 
-        if(!response){
-            return res.status(401).json({
-                message: "User Does not Exist"
+        if(response){
+            if(response.pin != detail.pin){
+                return res.status(401).json({
+                    error: 'Invalid Credential'
+                })
+            }
+    
+            res.cookie("Admin", response.id, {
+                httpOnly: true,
+                secure: false, 
+                maxAge: 12 * 60 * 60 * 1000,
+                sameSite: "lax",
+            });
+
+            return res.status(200).json({
+                message: 'Admin'
             })
         }
+        
+        const subAdmin = await prisma.subAdmin.findFirst({
+            where: {
+                email: detail.email
+            }
+        })
 
-        if(response.pin != detail.pin){
-            return res.status(401).json({
-                error: 'Invalid Credential'
+        if(subAdmin){
+            if(subAdmin.pin != detail.pin){
+                return res.status(401).json({
+                    error: 'Invalid Credential'
+                })
+            }
+
+            res.cookie('subAdmin', subAdmin.id , {
+                httpOnly: true,
+                secure: false,
+                maxAge: 12 * 60 * 1000,
+                sameSite: 'lax'
+            })
+
+            return res.status(200).json({
+                message: 'Sub Admin'
             })
         }
-
-        res.cookie("Admin", response.id, {
-            httpOnly: true,
-            secure: false, 
-            maxAge: 12 * 60 * 60 * 1000,
-            sameSite: "lax",
-        });
-
-        return res.status(200).json({
-            message: 'Verified'
+        
+        return res.status(401).json({
+            message: 'Admin Does Not Exists'
         })
 
     } catch (error) {
@@ -291,11 +316,11 @@ router.post('/add-subadmin', async(req, res) => {
 
 router.post('/remove-subadmin', async(req, res) => {
     try {
-        const {SubAdminId}: {SubAdminId: string} = await req.body
+        const { id } = await req.body
 
         const response = await prisma.subAdmin.findFirst({
             where:{
-                id: SubAdminId
+                id: id
             }
         })
 
@@ -307,7 +332,7 @@ router.post('/remove-subadmin', async(req, res) => {
 
         await prisma.subAdmin.delete({
             where:{
-                id: SubAdminId,
+                id: id,
                 email: response.email
             }
         })
@@ -346,16 +371,50 @@ router.post('/add-doctor', async(req, res) => {
             })
         }
 
-        await prisma.doctor.create({
+        const subAdmin = await prisma.subAdmin.findFirst({
+            where: {
+                email: details.admin
+            }
+        })
+
+        if(!subAdmin){
+            await prisma.subAdmin.create({
+                data: {
+                    email: details.admin,
+                    pin: '000000',
+                    fullname: details.adminName
+                }
+            })
+        }
+
+        const findSubAdmin = await prisma.subAdmin.findFirst({
+            where: {
+                email: details.admin
+            }
+        })
+        
+        const doctor = await prisma.doctor.create({
             data: {
                 fullname: details.fullname,
                 email: details.email,
                 specializations: details.specializations,
                 hospitals: details.hospitals,
                 about: details.about,
+                admin: findSubAdmin?.id,
                 rating: details.rating
             }
         })
+
+        await prisma.subAdmin.update({
+            where: {
+              id: findSubAdmin?.id,
+            },
+            data: {
+              doctors: {
+                push: doctor.id,
+              },
+            },
+        });
 
         return res.status(200).json({
             message: 'Doctor Added Successfully'
@@ -372,23 +431,49 @@ router.post('/add-doctor', async(req, res) => {
 
 router.post('/remove-doctor', async(req, res) => {
     try {
-        const { DoctorId }: {DoctorId: string} = await req.body
+        const { id } = await req.body
 
         const response = await prisma.doctor.findFirst({
             where: {
-                id: DoctorId
+                id: id
             }
         })
 
-        if(!response){
-            return res.status(409).json({
+        if(!response || response.admin === null){
+            return res.status(401).json({
                 error: 'Doctor Does Not Exist'
             })
         }
 
-        await prisma.doctor.delete({
+        const subAdmin = await prisma.subAdmin.findFirst({
+            where: {
+              id: response.admin
+            },
+            select: {
+              doctors: true,
+            },
+        });
+      
+          if (!subAdmin) {
+            throw new Error("SubAdmin not found");
+          }
+      
+          const updatedDoctors = subAdmin.doctors.filter((doctor) => doctor !== response.email);
+      
+          await prisma.subAdmin.update({
+            where: {
+                id: response.admin
+            },
+            data: {
+              doctors: {
+                set: updatedDoctors,
+              },
+            },
+          });
+
+          await prisma.doctor.delete({
             where:{
-                id: DoctorId,
+                id: id,
                 email: response.email
             }
         })

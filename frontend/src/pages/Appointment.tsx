@@ -118,6 +118,7 @@ const Appointment = () => {
 
       if(response.status === 200){
         showSnackbar("Appointment Completed", "success");
+        window.location.reload();
       }
       else {
         showSnackbar(`${response.data.error}`, "error");
@@ -138,6 +139,7 @@ const Appointment = () => {
 
       if(response.status === 200){
         showSnackbar("Appointment Cancelled Successfully", "success");
+        window.location.reload();
       }
       else {
         showSnackbar(`${response.data.error}`, "error");

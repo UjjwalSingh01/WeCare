@@ -55,7 +55,7 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
                 fontSize: { xs: '1.00rem', sm: '1.25rem', md: '2rem' },
                 fontWeight: 'bold',
                 color: theme.palette.primary.main,
-                marginRight: 2, // Space between the label and the value
+                marginRight: 2,
               }}
             >
               Monthly Appointment:

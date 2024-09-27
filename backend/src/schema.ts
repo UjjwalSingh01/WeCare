@@ -42,6 +42,8 @@ type appointmentType = z.infer<typeof appointmentSchema>
 const doctorSchema = z.object({
     fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
     email: z.string().email('Enter Correct Email Format'),
+    admin: z.string().nonempty('Admin Must Be Added') ,
+    adminName: z.string().min(2, 'Name Must Contain Atleast 2 Characters').nonempty('Admin Name is Required') ,
     specializations: z
         .array(z.string().nonempty("Specialization cannot be an empty string."))
         .min(1, "At least one specialization is required."),

@@ -1,11 +1,6 @@
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
-// interface PropsType {
-//   heading: string;
-//   amount: number;
-// }
-
 export default function InfoCard({data, heading}: {data: number, heading: string}) {
   const theme = useTheme();
   return (

@@ -20,51 +20,51 @@ app.use(cookieParser());
 
 const router = express.Router();
 
-interface SubAdminDetail {
-    email: string,
-    pin: string
-}
+// interface SubAdminDetail {
+//     email: string,
+//     pin: string
+// }
 
-router.post('/subadmin-login', async(req, res) => {
-    try {
-        const detail: SubAdminDetail = await req.body;
+// router.post('/subadmin-login', async(req, res) => {
+//     try {
+//         const detail: SubAdminDetail = await req.body;
 
-        const response = await prisma.subAdmin.findFirst({
-            where:{
-                email: detail.email
-            }
-        })
+//         const response = await prisma.subAdmin.findFirst({
+//             where:{
+//                 email: detail.email
+//             }
+//         })
 
-        if(!response){
-            return res.status(401).json({
-                error: 'Sub-Admin Does Not Exists'
-            })
-        }
+//         if(!response){
+//             return res.status(401).json({
+//                 error: 'Sub-Admin Does Not Exists'
+//             })
+//         }
 
-        if(response.pin != detail.pin){
-            return res.status(401).json({
-                error: 'Invalid Pin'
-            })
-        }
+//         if(response.pin != detail.pin){
+//             return res.status(401).json({
+//                 error: 'Invalid Pin'
+//             })
+//         }
 
-        res.cookie('subAdmin', response.id , {
-            httpOnly: true,
-            secure: false,
-            maxAge: 12 * 60 * 1000,
-            sameSite: 'lax'
-        })
+//         res.cookie('subAdmin', response.id , {
+//             httpOnly: true,
+//             secure: false,
+//             maxAge: 12 * 60 * 1000,
+//             sameSite: 'lax'
+//         })
 
-        return res.json({
-            message: 'Login Successful'
-        })
+//         return res.json({
+//             message: 'Login Successful'
+//         })
 
-    } catch (error) {
-        console.error("Error Logging in Sub Admin", error);
-        return res.status(500).json({ 
-            error: "Error in Logging in Sub Admin" 
-        });
-    }
-})
+//     } catch (error) {
+//         console.error("Error Logging in Sub Admin", error);
+//         return res.status(500).json({ 
+//             error: "Error in Logging in Sub Admin" 
+//         });
+//     }
+// })
 
 router.get('/subAdmin-dashbaord', async(req, res) => {
     try {
@@ -91,22 +91,55 @@ router.get('/subAdmin-dashbaord', async(req, res) => {
             });
         }
 
-        const appointments = await prisma.appointment.findMany({
+        const subAdmin = await prisma.subAdmin.findUnique({
             where: {
-              doctorId: subAdminId,
+              id: subAdminId,
             },
-            include: {
-              patient: true,
-            }
-        });
-          
-        const appointmentDetails = appointments.map((appointment) => ({
+            select: {
+              doctors: true,
+            },
+          });
+      
+          if (!subAdmin) {
+            throw new Error("SubAdmin not found");
+          }
+      
+          const doctorIds = subAdmin.doctors;
+      
+          const appointments = await prisma.appointment.findMany({
+            where: {
+              doctorId: {
+                in: doctorIds,
+              },
+            },
+            select: {
+              id: true,
+              reason: true,
+              date: true,
+              time: true,
+              status: true,
+              patient: {
+                select: {
+                  fullname: true,
+                },
+              },
+              doctor: {
+                select: {
+                  fullname: true,
+                },
+              },
+            },
+          });
+      
+          const formattedAppointments = appointments.map((appointment) => ({
+            appointmentId: appointment.id,
             patientName: appointment.patient.fullname,
-            reason: appointment.reason,
+            doctor: appointment.doctor.fullname,
             date: appointment.date,
             time: appointment.time,
-            status: appointment.status
-        }));
+            status: appointment.status,
+            reason: appointment.reason,
+          }));
 
         const now = dayjs();
   
@@ -121,10 +154,10 @@ router.get('/subAdmin-dashbaord', async(req, res) => {
         // Count appointments in the current month
         const currentMonthAppointments = await prisma.appointment.count({
             where: {
-            date: {
-                gte: startOfCurrentMonth,
-                lte: endOfCurrentMonth,
-            },
+                date: {
+                    gte: startOfCurrentMonth,
+                    lte: endOfCurrentMonth,
+                },
             },
         });
 
@@ -137,16 +170,18 @@ router.get('/subAdmin-dashbaord', async(req, res) => {
             },
             },
         });
-        
+              
         const totalAppointments = await prisma.appointment.count({
-            where:{
-                doctorId: subAdminId
-            }
-        })
+            where: {
+                doctorId: {
+                    in: doctorIds,
+                },
+            },
+        });
 
         return res.json({
             name: name.fullname,
-            appointments: appointmentDetails,
+            appointments: formattedAppointments,
             monthly: { currentMonthAppointments, lastMonthAppointments },
             totalAppointments: totalAppointments
         })

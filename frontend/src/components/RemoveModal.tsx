@@ -22,13 +22,14 @@ export default function RemoveModal({ heading, data }: { heading: string, data: 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const [removeId, setRemoveId] = useState('')
+  const [removeId, setRemoveId] = useState<string>('')
 
   const member = data;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRemoveId(event.target.value);
-  };
+    // setRemoveId(selectedValue);
+  };  
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");

@@ -11,9 +11,9 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: 500, // Increased width for better form display
+  width: 500,
   bgcolor: 'background.paper',
-  borderRadius: 8, // Rounded corners
+  borderRadius: 8,
   boxShadow: 24,
   p: 4,
 };
@@ -34,6 +34,8 @@ export default function DoctorDetailModal() {
   };
 
   const [fullname, setName] = useState('');
+  const [admin, setAdmin] = useState('')
+  const [adminName, setAdminName] = useState('')
   const [email, setEmail] = useState('');
   const [about, setAbout] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);
@@ -72,6 +74,8 @@ export default function DoctorDetailModal() {
         specializations,
         hospitals,
         about,
+        admin,
+        adminName,
         rating: 5
       })
 
@@ -80,6 +84,7 @@ export default function DoctorDetailModal() {
       }
       else {
         showSnackbar(`${response.data.error}`, "error");
+        return
       }
 
     } catch (error) {
@@ -124,6 +129,26 @@ export default function DoctorDetailModal() {
             onChange={(e) => setEmail(e.target.value)}
             id="outlined-email"
             label="Email"
+            variant="outlined"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            value={adminName}
+            onChange={(e) => setAdminName(e.target.value)}
+            id="outlined-email"
+            label="Admin Name"
+            variant="outlined"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+
+          <TextField
+            value={admin}
+            onChange={(e) => setAdmin(e.target.value)}
+            id="outlined-email"
+            label="Admin Email"
             variant="outlined"
             fullWidth
             sx={{ mb: 2 }}

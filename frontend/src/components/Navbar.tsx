@@ -26,6 +26,7 @@ export default function Navbar() {
       showSnackbar("Error in Logout", "success");
     } catch (error) {
       showSnackbar("Error in Logout", "error");
+      console.error('Error in Logout: ', error)
     }
   }
   
@@ -56,7 +57,6 @@ export default function Navbar() {
           <Avatar
               alt="Username"
               src="/static/images/avatar/1.jpg"
-            //   sx={{ width: 64, height: 64, mb: 2, border: `2px solid ${theme.palette.background.paper}` }}
             />
             <Typography variant="h6" noWrap>
               &nbsp; Admin
@@ -70,12 +70,12 @@ export default function Navbar() {
           onClose={() => setOpenSnackbar(false)}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           sx={{
-            width: '400px', // Control width
+            width: '400px',
             borderRadius: '8px',
             boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
             padding: '0',
             '& .MuiSnackbarContent-root': {
-              padding: 0, // Remove default padding
+              padding: 0,
             },
           }}
         >
@@ -86,15 +86,15 @@ export default function Navbar() {
             background: snackbarSeverity === 'success'
               ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
               : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff', // Text color
-            fontSize: '1.1rem', // Larger font
-            fontWeight: 'bold', // Bold text
-            borderRadius: '8px', // Rounded corners
-            padding: '16px', // Padding inside Alert
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', // Add shadow
-            width: '100%', // Take up the full Snackbar width
+            color: '#fff',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            borderRadius: '8px',
+            padding: '16px',
+            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+            width: '100%',
             '& .MuiAlert-icon': {
-              fontSize: '28px', // Larger icon size
+              fontSize: '28px',
             },
           }}
         >

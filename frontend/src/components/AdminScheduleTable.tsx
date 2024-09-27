@@ -32,8 +32,8 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 
 
 export default function ScheduleTable({appointments} : {appointments: AppointmentsDetails[]}) {
-  const [page, setPage] = useState(0); // State for the current page
-  const rowsPerPage = 10; // Set rows per page to 10
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 10;
 
   // Handle page change
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -70,11 +70,10 @@ export default function ScheduleTable({appointments} : {appointments: Appointmen
       <TablePagination
         component="div"
         count={appointments.length}
-        rowsPerPage={rowsPerPage} // Fixed rows per page to 10
+        rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
-        // Removed rowsPerPageChange handler to fix rows per page
-        rowsPerPageOptions={[]} // Hide rows per page options
+        rowsPerPageOptions={[]} 
       />
     </TableContainer>
   );

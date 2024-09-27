@@ -14,7 +14,9 @@ interface MonthlyDetails {
 }
 
 export interface SubAppointmentsDetails {
+  appointmentId: string,
   patientName: string;
+  doctor: string;
   reason: string;
   date: string;
   time: string;
@@ -30,10 +32,12 @@ const SubAdminPanel = () => {
   const [totalAppointments, setTotalAppointments] = useState(192)
   const [appointments, setAppointments] = useState<SubAppointmentsDetails[]>([
     {
+      appointmentId: '1',
       patientName: 'John Doe',
       reason: 'Headache',
-      date: 'September 23, 2024',
+      date: 'September 20, 2024',
       time: '11:00 AM',
+      doctor: 'Dr. Doctor 1',
       status: 'ACTIVE'
     }
   ]);

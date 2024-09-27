@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
@@ -151,11 +151,11 @@ router.post('/make-appointment', async(req, res) => {
 
 router.post('/cancel-appointment', async(req, res) => {
     try {
-        const appointmentId: string = await req.body
+        const { id } = await req.body
 
         const appointment = await prisma.appointment.findFirst({
             where:{
-                id: appointmentId
+                id: id
             }
         })
 
@@ -167,7 +167,11 @@ router.post('/cancel-appointment', async(req, res) => {
 
         await prisma.appointment.update({
             where:{
-                id: appointmentId,
+                uniqueDoctorAppointment: {
+                    doctorId: appointment.doctorId,
+                    date: appointment.date,
+                    time: appointment.time
+                }
             },
             data:{
                 status: 'CANCELLED'
@@ -186,9 +190,47 @@ router.post('/cancel-appointment', async(req, res) => {
     }
 })
 
-// appointment ids ayengi completed or cancelled from the manager of the doctor
+
+interface UpdateAppointment {
+    id: string,
+    action: 'CANCELLED' | 'COMPLETED'
+}
+
 router.post('/update-appointment', async(req, res) => {
-    
+    try {
+        const detail: UpdateAppointment = await req.body;
+
+        const response = await prisma.appointment.findFirst({
+            where: {
+                id: detail.id
+            }
+        })
+
+        if(!response){
+            return res.status(401).json({
+                error: "Appointment Does Not Exists"
+            })
+        }
+
+        await prisma.appointment.update({
+            where: {
+                id: detail.id
+            },
+            data: {
+                status: detail.action
+            }
+        })
+
+        return res.status(200).json({
+            message: 'Appointment Updated Successful'
+        })
+
+    } catch (error) {
+        console.error("Error in Updating Appointments", error);
+        return res.status(500).json({ 
+            error: "Error in Updating Appointments" 
+        });
+    }
 })
 
 export const appointmentRoute = router;
