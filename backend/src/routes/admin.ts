@@ -76,7 +76,7 @@ router.post('/admin-login', async(req, res) => {
         }
         
         return res.status(401).json({
-            message: 'Admin Does Not Exists'
+            error: 'Admin Does Not Exists'
         })
 
     } catch (error) {
@@ -237,11 +237,11 @@ router.post('/add-admin', async(req, res) => {
 
 router.post('/remove-admin', async(req, res) => {
     try {
-        const { adminId } : { adminId: string } = await req.body
+        const { removeId } = await req.body
 
         const response = await prisma.admin.findFirst({
             where:{
-                id: adminId
+                id: removeId
             }
         })
 
@@ -253,7 +253,7 @@ router.post('/remove-admin', async(req, res) => {
 
         await prisma.admin.delete({
             where:{
-                id: adminId,
+                id: removeId,
                 email: response.email
             }
         })
@@ -316,11 +316,11 @@ router.post('/add-subadmin', async(req, res) => {
 
 router.post('/remove-subadmin', async(req, res) => {
     try {
-        const { id } = await req.body
+        const { removeId } = await req.body
 
         const response = await prisma.subAdmin.findFirst({
             where:{
-                id: id
+                id: removeId
             }
         })
 
@@ -332,7 +332,7 @@ router.post('/remove-subadmin', async(req, res) => {
 
         await prisma.subAdmin.delete({
             where:{
-                id: id,
+                id: removeId,
                 email: response.email
             }
         })
@@ -431,11 +431,11 @@ router.post('/add-doctor', async(req, res) => {
 
 router.post('/remove-doctor', async(req, res) => {
     try {
-        const { id } = await req.body
+        const { removeId } = await req.body
 
         const response = await prisma.doctor.findFirst({
             where: {
-                id: id
+                id: removeId
             }
         })
 
@@ -473,7 +473,7 @@ router.post('/remove-doctor', async(req, res) => {
 
           await prisma.doctor.delete({
             where:{
-                id: id,
+                id: removeId,
                 email: response.email
             }
         })

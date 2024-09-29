@@ -25,7 +25,7 @@ model Patient {
   address           String
   emergencyContactName      String?
   emergencyContactNumber    String?
-  primaryPhysician          String? // reference basically id hogi
+  primaryPhysician          String?
   allergies                 String?
   currentMedications        String?
   medicalHistory            String?
@@ -93,9 +93,9 @@ enum Status {
 }
 
 enum Gender {
-  Male
-  Female
-  Other
+  MALE
+  FEMALE
+  OTHER
 }
 
 

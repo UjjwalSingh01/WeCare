@@ -58,6 +58,7 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
 
         if(response.status === 200){
             showSnackbar(`${response.data.message}`, "success");
+            window.location.reload();
             handleClose()
         }
         else {

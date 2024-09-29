@@ -4,7 +4,7 @@ import { Card, TextField, Button, Typography, FormControl, RadioGroup, FormContr
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
-import PhoneInput from 'react-phone-number-input';
+// import PhoneInput from 'react-phone-number-input';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import image from '../assets/doctor.jpg'
 import axios from 'axios';
@@ -14,10 +14,12 @@ import { useNavigate } from 'react-router-dom';
 const schema = z.object({
   fullname: z.string().min(2, 'Full Name must be at least 2 characters long'),
   email: z.string().email('Invalid email address'),
-  phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters long'),
+  phoneNumber: z.string().length(10, 'Phone number must be at least 10 characters long'),
   dob: z.string().nonempty('Date of Birth is required'),
   gender: z.string().nonempty('Gender is required'),
   address: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergenyPhone: z.string().length(10, 'Phone Number Must Contain Only 10 digits'),
   allergies: z.string().optional(),
   medications: z.string().optional(),
   medicalHistory: z.string().optional(),
@@ -32,20 +34,7 @@ export interface DoctorDetails {
 }
 
 const PatientDetail = () => {
-  const [doctors, setDoctors] = useState<DoctorDetails[]>([
-    {
-      id: '1',
-      fullname: 'JOhn Doe'
-    },
-    {
-      id: '2',
-      fullname: 'Jane Doe'
-    } , 
-    {
-      id: '3',
-      fullname: 'Edo Jane'
-    }
-  ])
+  const [doctors, setDoctors] = useState<DoctorDetails[]>([])
 
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('')
@@ -84,8 +73,10 @@ const PatientDetail = () => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-
-        const response = await axios.get('http://localhost:3000/api/v1/patient/get-patient')
+        const response = await axios.get('http://localhost:3000/api/v1/patient/get-patient',
+        {
+          withCredentials: true
+        })
 
         setFullname(response.data.fullname || '')
         setEmail(response.data.email || '')
@@ -103,7 +94,7 @@ const PatientDetail = () => {
 
   async function onSubmit() {
     try {
-      const parseData = await schema.safeParse({
+      const parseData = schema.safeParse({
         fullname,
         email,
         phoneNumber,
@@ -132,7 +123,7 @@ const PatientDetail = () => {
         email,
         phoneNumber,
         dob: value?.format('MMMM D, YYYY'),
-        gender,
+        gender: gender.toUpperCase(),
         address,
         emergenyPhone,
         emergencyContactName,
@@ -216,7 +207,7 @@ const PatientDetail = () => {
               variant="outlined"
               sx={{ width: '100%' }}
             />
-            <PhoneInput
+            {/* <PhoneInput
               placeholder="Enter phone number"
               value={phoneNumber}
               onChange={setPatientPhone}
@@ -226,6 +217,17 @@ const PatientDetail = () => {
                 borderRadius: '8px',
                 padding: '10px',
                 width: '100%',
+              }}
+            /> */}
+            <TextField
+              id="standard-basic"
+              label="Phone Number"
+              variant="standard"
+              fullWidth
+              onChange={(e) => {setPatientPhone(e.target.value)}}
+              sx={{
+                input: { padding: '8px 12px', borderRadius: '5px', },
+                mb: 2,
               }}
             />
           </div>
@@ -250,15 +252,15 @@ const PatientDetail = () => {
               >
                 <FormControlLabel 
                   sx={{ border: '2px dotted lightgrey', pr: 0.5 }} 
-                  value="female" control={<Radio />} label="Female" 
+                  value="FEMALE" control={<Radio />} label="Female" 
                 />
                 <FormControlLabel 
                   sx={{ border: '2px dotted lightgrey', pr: 0.5 }} 
-                  value="male" control={<Radio />} label="Male" 
+                  value="MALE" control={<Radio />} label="Male" 
                 />
                 <FormControlLabel 
                   sx={{ border: '2px dotted lightgrey', pr: 0.5 }} 
-                  value="other" control={<Radio />} label="Other" 
+                  value="OTHER" control={<Radio />} label="Other" 
                 />
               </RadioGroup>
             </FormControl>
@@ -284,7 +286,7 @@ const PatientDetail = () => {
               variant="outlined"
               sx={{ width: '100%' }}
             />
-            <PhoneInput
+            {/* <PhoneInput
               placeholder="Enter phone number"
               value={emergenyPhone}
               onChange={setEmergenyPhone}
@@ -294,6 +296,17 @@ const PatientDetail = () => {
                 borderRadius: '8px',
                 padding: '10px',
                 width: '100%',
+              }}
+            /> */}
+            <TextField
+              id="standard-basic"
+              label="Emergency Phone Number"
+              variant="standard"
+              fullWidth
+              onChange={(e) => {setEmergenyPhone(e.target.value)}}
+              sx={{
+                input: { padding: '8px 12px', borderRadius: '5px', },
+                mb: 2,
               }}
             />
           </div>

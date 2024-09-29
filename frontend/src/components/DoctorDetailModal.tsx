@@ -87,6 +87,8 @@ export default function DoctorDetailModal() {
         return
       }
 
+      window.location.reload();
+
     } catch (error) {
       showSnackbar("Error in Adding Doctor", "error");
       console.error('Error in Adding Doctor: ', error)

@@ -6,6 +6,8 @@ import dayjs, {Dayjs} from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import axios from 'axios';
 import { DoctorDetails } from './PatientDetail';
+import image from '../assets/doctor3.jpg'
+import image1 from '../assets/doc1.png'
 
 
 interface AppointmentDetails {
@@ -20,41 +22,9 @@ const Appointment = () => {
   const [physician, setPhysician] = useState('');
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('')
-  const [appointments, setAppointments] = useState<AppointmentDetails[]>([
-    {
-      appointmentId: '1',
-      doctorName: 'John Doe',
-      date: 'Sept 11, 2020',
-      time: '11:00 AM'
-    }, 
-    {
-      appointmentId: '2',
-      doctorName: 'Jane Doe',
-      date: 'Sept 12, 2020',
-      time: '13:00 PM'
-    }, 
-    {
-      appointmentId: '3',
-      doctorName: 'Edo John',
-      date: 'Sept 11, 2020',
-      time: '15:00 PM'
-    }
-  ])
+  const [appointments, setAppointments] = useState<AppointmentDetails[]>([])
 
-  const [doctors, setDoctors] = useState<DoctorDetails[]>([
-    {
-      id: '1',
-      fullname: 'JOhn Doe'
-    },
-    {
-      id: '2',
-      fullname: 'Jane Doe'
-    } , 
-    {
-      id: '3',
-      fullname: 'Edo Jane'
-    }
-  ])
+  const [doctors, setDoctors] = useState<DoctorDetails[]>([])
 
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -72,7 +42,7 @@ const Appointment = () => {
       try {
         const response = await axios.get('http://localhost:3000/api/v1/appointment/get-appointment')
 
-        setAppointments(response.data.result)
+        setAppointments(response.data.appointments)
         setDoctors(response.data.doctors)
 
       } catch (error) {
@@ -84,7 +54,7 @@ const Appointment = () => {
     fetchDetails()
   },[])
 
-  const allowedHours = [11, 13, 15, 17, 19]; // 11 AM, 1 PM, 3 PM, 5 PM, 7 PM
+  const allowedHours = [11, 13, 15, 17, 19];
 
   const shouldDisableTime = (value: dayjs.Dayjs, view: 'hours' | 'minutes' | 'seconds') => {
     if (view === 'hours') {
@@ -118,7 +88,7 @@ const Appointment = () => {
 
       if(response.status === 200){
         showSnackbar("Appointment Completed", "success");
-        window.location.reload();
+        // window.location.reload();
       }
       else {
         showSnackbar(`${response.data.error}`, "error");
@@ -155,20 +125,32 @@ const Appointment = () => {
   return (
       <div className="w-screen h-screen flex relative">
         
-        <section className="bg-red-400 w-[25%] h-full">
-
+        <section className="bg-red-400 w-[25%] h-full"
+          style={{
+            backgroundImage: `url(${image1})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backdropFilter: 'blur(30px)',
+          }}>
         </section>
 
-        <section className="bg-emerald-300 w-[75%] h-full flex justify-end items-center">
+        <section className="bg-emerald-300 w-[75%] h-full flex justify-end items-center"
+          style={{
+            backgroundImage: `url(${image})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backdropFilter: 'blur(30px)',
+          }}
+        >
           
-          <div className="bg-purple-600 w-full sm:w-[90%] md:w-[80%] lg:w-[70%] h-full sm:h-[80%] lg:h-[70%] mr-4 sm:mr-10 lg:mr-20 p-4 sm:p-6 md:p-16 flex-col justify-center items-center transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
+          <div className="bg-white/80 w-full sm:w-[90%] md:w-[80%] lg:w-[70%] h-full sm:h-[80%] lg:h-[70%] mr-4 sm:mr-10 lg:mr-20 p-4 sm:p-6 md:p-16 flex-col justify-center items-center transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
             
             <div className="">
                 <Typography
                     variant="h3"
                     gutterBottom
                     align="left"
-                    className="text-blue-700 font-extrabold text-3xl sm:text-4xl lg:text-5xl"  // Responsive font size
+                    className="text-blue-700 font-extrabold text-3xl sm:text-4xl lg:text-5xl"
                 >
                     WeCare
                 </Typography>
@@ -176,7 +158,7 @@ const Appointment = () => {
                     variant="h6"
                     gutterBottom
                     align="left"
-                    className="text-gray-600 text-base sm:text-lg lg:text-xl"  // Responsive font size
+                    className="text-gray-600 text-base sm:text-lg lg:text-xl"
                 >
                     Book Your Appointments .....
                 </Typography>
@@ -273,14 +255,14 @@ const Appointment = () => {
         </section>
 
         <div className="bg-blue-400 w-[90%] sm:w-[425px] h-[50%] sm:h-[80%] shadow-2xl flex justify-center items-center rounded-tl-[100px] rounded-br-[100px] absolute top-[20%] sm:top-[10%] left-[10%] sm:left-[25%] transform -translate-x-1/2 rounded-lg transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl">
-          <div className="bg-gradient-to-br from-red-600 to-red-700 p-6 rounded-lg shadow-lg h-[90%] w-[90%] overflow-y-auto">
-            <Typography variant="h5" component="h2" className="text-white font-bold mb-4">
+          <div className="bg-gradient-to-br p-6 rounded-lg h-[90%] w-[90%] overflow-y-auto">
+            <Typography variant="h5" component="h4" align='center' className="text-white font-bold mb-4">
               Active Appointments
             </Typography>
-            <div className="space-y-4">
+            <div className="space-y-4 mt-4">
               {appointments.map((appointment) => {
                 return (
-                  <Card className="bg-white shadow-md rounded-lg p-4 hover:shadow-xl transition-shadow duration-300">
+                  <Card className="bg-white shadow-md rounded-lg p-1 hover:shadow-xl transition-shadow duration-300">
                     <CardContent>
                       <Typography variant="h6" component="div" className="text-gray-800 font-semibold">
                         Dr. {appointment.doctorName}

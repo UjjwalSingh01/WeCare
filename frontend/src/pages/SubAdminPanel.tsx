@@ -97,7 +97,7 @@ const SubAdminPanel = () => {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, // Responsive grid
+            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
             gap: { xs: 2, md: 4 },
             marginBottom: { xs: 3, md: 5 },
           }}

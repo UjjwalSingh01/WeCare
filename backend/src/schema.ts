@@ -4,7 +4,8 @@ import { z } from 'zod'
 const registerSchema = z.object({
     email: z.string().email('Enter Correct Email Format'),
     fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
-    phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+    phoneNumber :z.string().length(10, 'Phone Number Must Contain Only 10 digits')
+    // phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
 })
 
 type registerType = z.infer<typeof registerSchema>
@@ -13,12 +14,14 @@ type registerType = z.infer<typeof registerSchema>
 const patientSchema = z.object({
     email: z.string().email('Enter Correct Email Format'),
     fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
-    phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+    // phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+    phoneNumber :z.string().length(10, 'Phone Number Must Contain Only 10 digits'),
     dob: z.string(),
-    gender: z.enum(['Male', 'Female' , 'Other']),
+    gender: z.enum(['MALE', 'FEMALE' , 'OTHER']),
     address: z.string(),
     emergencyContactName: z.string().optional(),
-    emergenyPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
+    emergenyPhone: z.string().length(10, 'Phone Number Must Contain Only 10 digits'),
+    // emergenyPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
     primaryPhysician: z.string().optional(),
     allergies: z.string().optional(),
     medications: z.string().optional(),

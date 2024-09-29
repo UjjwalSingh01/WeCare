@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import { PrismaClient } from "@prisma/client";
 import { patientType, registerSchema, registerType } from "../schema";
-import { error } from "console";
+import cors from 'cors';
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -13,7 +13,10 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
-
+app.use(cors({
+    origin: 'http://localhost:5173', // Your frontend URL
+    credentials: true, // Allow credentials (cookies, headers)
+}));
 
 const router = express.Router();
 
@@ -28,12 +31,12 @@ router.post('/register', async(req, res) => {
             });
         }
 
-        res.cookie("patientTemp", detail, {
-            httpOnly: true,
-            secure: false, 
+        res.cookie("patientTemp", JSON.stringify(detail), {
+            httpOnly: false,
+            secure: false,
             maxAge: 10 * 60 * 1000,
             sameSite: "lax",
-        });
+        }); 
 
         return res.status(200).json({ 
             message: "Patient registered successfully" 
@@ -50,7 +53,22 @@ router.post('/register', async(req, res) => {
 
 router.get('/get-patient', async(req, res) => {
     try {
-        const detail: registerType = req.cookies.patientTemp;
+        const cookieData = req.cookies.patientTemp;
+
+        if (!cookieData) {
+            return res.status(404).json({ error: "No cookie found" });
+        }
+        console.log('h2')
+        const parsedData = JSON.parse(cookieData);
+        console.log('h3')
+        const zodResult = registerSchema.safeParse(parsedData);
+        if (!zodResult.success) {
+            return res.status(400).json({
+                error: "Invalid Request",
+            });
+        }
+        console.log('h4')
+        const detail: registerType = zodResult.data;
 
         if(!detail){
             return res.status(400).json({
@@ -65,9 +83,7 @@ router.get('/get-patient', async(req, res) => {
             }
         })
 
-        res.clearCookie('patientTemp')
-
-        return res.json({
+        return res.status(200).json({
             fullname: detail.fullname,
             email: detail.email,
             patientPhone: detail.phoneNumber,
@@ -85,6 +101,7 @@ router.get('/get-patient', async(req, res) => {
 
 router.post('/registerPatient', async(req, res) => {
     try {
+        console.log(req.body)
         const patientDetails: patientType = await req.body;
         const zodResult = registerSchema.safeParse(patientDetails)
         if(!zodResult.success){
@@ -94,7 +111,7 @@ router.post('/registerPatient', async(req, res) => {
               });
         }
 
-        const existingPatient = await prisma.patient.findUnique({
+        const existingPatient = await prisma.patient.findFirst({
             where: { email: patientDetails.email },
         });
         
@@ -120,6 +137,8 @@ router.post('/registerPatient', async(req, res) => {
                 familyMedicalHistory: patientDetails.familyMedicalHistory
             }
         })
+
+        res.clearCookie('patientTemp')
 
         res.cookie('Patient', response.id , {
             httpOnly: true,

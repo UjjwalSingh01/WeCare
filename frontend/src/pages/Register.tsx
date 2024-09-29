@@ -1,7 +1,7 @@
 import { Alert, Button, Snackbar, TextField, Typography } from "@mui/material";
 import image from '../assets/doctor.jpg';
 import 'react-phone-number-input/style.css';
-import PhoneInput from 'react-phone-number-input';
+// import PhoneInput from 'react-phone-number-input';
 // import  E164Number  from 'react-phone-number-input';
 import { useState } from "react";
 import PinModal from "../components/PinModal";
@@ -10,16 +10,17 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const registerSchema = z.object({
-  fullname: z.string().min(2, 'Full Name Must Contain Atleast 2 Characters'),
-  email: z.string().email('Email Format is Invalid'),
-  phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+  email: z.string().email('Enter Correct Email Format'),
+  fullname: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
+  phoneNumber :z.string().length(10, 'Phone Number Must Contain Only 10 digits')
+  // phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
 })
 
 const Register = () => {
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
   // const [phoneNumber, setPhoneNumber] = useState<typeof E164Number | undefined>(undefined);
-  const [phoneNumber, setPhoneNumber] = useState<string | undefined>('')
+  const [phoneNumber, setPhoneNumber] = useState('')
 
   const navigate = useNavigate()
 
@@ -35,7 +36,7 @@ const Register = () => {
 
   async function onSubmit() {
     try {
-      const parseData = await registerSchema.safeParse({ fullname, email, phoneNumber })
+      const parseData = registerSchema.safeParse({ fullname, email, phoneNumber })
       if(!parseData.success){
         parseData.error.errors.forEach((error) => {
           console.log(error.message)
@@ -112,14 +113,26 @@ const Register = () => {
               }}
             />
 
-            <PhoneInput
+            <TextField
+              id="standard-basic"
+              label="Phone Number"
+              variant="standard"
+              fullWidth
+              onChange={(e) => {setPhoneNumber(e.target.value)}}
+              sx={{
+                input: { padding: '8px 12px', borderRadius: '5px', },
+                mb: 2,
+              }}
+            />
+
+            {/* <PhoneInput
               placeholder="Enter phone number"
               value={phoneNumber}
               onChange={setPhoneNumber}
               defaultCountry="IN"
             //   className="mb-4 p-2 border rounded-md border-gray-300"
               style={{ marginTop:45, marginBottom:40, padding: '8px 12px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }}
-            />
+            /> */}
 
             <Button
               variant="contained"

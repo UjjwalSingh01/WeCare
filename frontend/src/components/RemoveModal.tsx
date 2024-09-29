@@ -67,6 +67,7 @@ export default function RemoveModal({ heading, data }: { heading: string, data: 
             return;
         }
 
+        window.location.reload();
         handleClose();
 
     } catch (error) {

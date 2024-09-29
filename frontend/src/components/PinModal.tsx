@@ -75,6 +75,7 @@ export default function PinModal() {
         return
       }
 
+      window.location.reload();
       handleClose()
     } catch (error) {
       showSnackbar('Admin Login UnSuccessful', "error");
