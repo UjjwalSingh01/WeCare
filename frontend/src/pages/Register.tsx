@@ -48,6 +48,8 @@ const Register = () => {
           fullname,
           email,
           phoneNumber
+        }, {
+          withCredentials: true
         })
 
         if (response.status === 200) {

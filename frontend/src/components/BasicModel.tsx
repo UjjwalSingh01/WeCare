@@ -40,30 +40,41 @@ export default function BasicModal({ heading, action,} : { heading: string; acti
   };
 
   async function onSubmit() {
-
     try{
-        let path = '';
         if(heading === 'Add Admin') {
-            path = 'add-admin'
-        }
-        else if(heading === 'Add Sub Admin') {
-            path = 'add-subadmin'
-        }
-
-        const response = await axios.post(`http://localhost:3000/api/v1/admin/${path}`, {
+          const response = await axios.post('http://localhost:3000/api/v1/admin/add-admin', {
             fullname,
             email,
             pin,
-        })
+            removeFacilities
+          })
 
-        if(response.status === 200){
-            showSnackbar(`${response.data.message}`, "success");
-            window.location.reload();
-            handleClose()
+          if(response.status === 200){
+              showSnackbar(`${response.data.message}`, "success");
+              window.location.reload();
+              handleClose()
+              return;
+          }
+          else {
+              showSnackbar(`${response.data.error}`, "error");
+          }
         }
-        else {
-            showSnackbar(`${response.data.error}`, "error");
-            return;
+        else if(heading === 'Add Sub Admin') {
+          const response = await axios.post('http://localhost:3000/api/v1/admin/add-subadmin', {
+            fullname,
+            email,
+            pin,
+          })
+
+          if(response.status === 200){
+              showSnackbar(`${response.data.message}`, "success");
+              window.location.reload();
+              handleClose()
+              return;
+          }
+          else {
+              showSnackbar(`${response.data.error}`, "error");
+          }
         }
 
     } catch(error) {

@@ -8,6 +8,8 @@ import axios from 'axios';
 import { DoctorDetails } from './PatientDetail';
 import image from '../assets/doctor3.jpg'
 import image1 from '../assets/doc1.png'
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 
 interface AppointmentDetails {
@@ -36,11 +38,16 @@ const Appointment = () => {
     setOpenSnackbar(true);
   };
 
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/v1/appointment/get-appointment')
+        const response = await axios.get('http://localhost:3000/api/v1/appointment/get-appointment'
+          , {
+            withCredentials: true
+          })
 
         setAppointments(response.data.appointments)
         setDoctors(response.data.doctors)
@@ -84,11 +91,14 @@ const Appointment = () => {
         note,
         date: schedule.format('MMMM D, YYYY'),
         time: schedule.format('hh:mm A')
+      }, {
+        withCredentials: true
       })
 
       if(response.status === 200){
         showSnackbar("Appointment Completed", "success");
-        // window.location.reload();
+        window.location.reload();
+        // navigate('/Appointment')
       }
       else {
         showSnackbar(`${response.data.error}`, "error");
@@ -176,10 +186,14 @@ const Appointment = () => {
                     onChange={handleChange}
                 >
                     {doctors.map((doctor, index) => (
-                        <MenuItem key={index} value={doctor.id}>
-                            {doctor.fullname}
+                        <MenuItem key={index} value={doctor.id} className="flex justify-between items-center">
+                            <span>{doctor.fullname}</span>
+                            <Link to="/DoctorDetailPage" state={doctor.id} className="ml-auto text-blue-500">
+                                ?
+                            </Link>
                         </MenuItem>
                     ))}
+
                 </TextField>
 
                 <div className="flex flex-col md:flex-row gap-4 md:gap-16 justify-around mt-4">

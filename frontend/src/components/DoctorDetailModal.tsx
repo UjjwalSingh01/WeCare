@@ -3,7 +3,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
 import { useState } from 'react';
-import { Alert, Chip, Snackbar, TextField } from '@mui/material';
+import { Alert, Chip, List, ListItem, ListItemButton, ListItemText, Snackbar, TextField } from '@mui/material';
 import axios from 'axios';
 
 const style = {
@@ -37,10 +37,15 @@ export default function DoctorDetailModal() {
   const [admin, setAdmin] = useState('')
   const [adminName, setAdminName] = useState('')
   const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<{ lat: number; lon: number; display_name: string } | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState<string[]>([])
   const [about, setAbout] = useState('');
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [hospitals, setHospitals] = useState<string[]>([]);
 
+  const [phoneNumberInput, setPhoneNumberInput] = useState<string>('')
   const [specializationInput, setSpecializationInput] = useState<string>('');
   const [hospitalInput, setHospitalInput] = useState<string>('');
 
@@ -66,8 +71,65 @@ export default function DoctorDetailModal() {
     setHospitals((prev) => prev.filter((chip) => chip !== chipToDelete));
   };
 
+  const handlePhoneNumberKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && phoneNumberInput.trim()) {
+      setPhoneNumber((prev) => [...prev, phoneNumberInput.trim()]);
+      setPhoneNumberInput('');
+    }
+  };
+
+  const handlePhoneNumberDelete = (chipToDelete: string) => {
+    setPhoneNumber((prev) => prev.filter((chip) => chip !== chipToDelete));
+  };
+
+  const fetchAddressSuggestions = async (query: string) => {
+    try {
+      const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+        params: {
+          q: query,
+          format: 'json',
+          addressdetails: 1,
+        },
+      });
+      setAddressSuggestions(response.data || []);
+    } catch (error) {
+      console.error('Error fetching address suggestions:', error);
+      showSnackbar('Error fetching address suggestions', 'error');
+    }
+  };
+
+  // Handle address input change
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setAddress(value);
+    if (value.trim().length > 2) {
+      fetchAddressSuggestions(value);
+    } else {
+      setAddressSuggestions([]);
+    }
+  };
+
+  // Handle address selection
+  const handleAddressSelect = (address: any) => {
+    setSelectedAddress({
+      lat: parseFloat(address.lat),
+      lon: parseFloat(address.lon),
+      display_name: address.display_name,
+    });
+    setAddress(address.display_name); // Set the address text field to the selected value
+    setAddressSuggestions([]); // Clear suggestions
+  };
+
+
   async function handleAdd() {
     try {
+      if (!selectedAddress) {
+        showSnackbar('Please select an address from the suggestions', 'error');
+        return;
+      }
+  
+      const { lat, lon, display_name } = selectedAddress;
+
       const response = await axios.post('http://localhost:3000/api/v1/admin/add-doctor', {
         fullname,
         email,
@@ -76,22 +138,24 @@ export default function DoctorDetailModal() {
         about,
         admin,
         adminName,
-        rating: 5
-      })
+        rating: 5,
+        address: display_name,
+        latitude: lat,
+        longitude: lon,
+        phoneNumber,
+      });
 
-      if(response.status === 200){
+      if (response.status === 200) {
         showSnackbar(`${response.data.message}`, "success");
-      }
-      else {
+      } else {
         showSnackbar(`${response.data.error}`, "error");
-        return
+        return;
       }
 
       window.location.reload();
-
     } catch (error) {
       showSnackbar("Error in Adding Doctor", "error");
-      console.error('Error in Adding Doctor: ', error)
+      console.error('Error in Adding Doctor: ', error);
     }
   }
 
@@ -157,6 +221,32 @@ export default function DoctorDetailModal() {
           />
 
           <TextField
+            value={address}
+            onChange={handleAddressChange}
+            label="Address"
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          {/* Address Suggestions */}
+          {addressSuggestions.length > 0 && (
+            <List sx={{ maxHeight: 150, overflowY: 'auto', mb: 2, border: '1px solid #ccc', borderRadius: 1 }}>
+              {addressSuggestions.map((suggestion, index) => (
+                <ListItem key={index} disablePadding>
+                  <ListItemButton onClick={() => handleAddressSelect(suggestion)}>
+                    <ListItemText primary={suggestion.display_name} />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          )}
+          {/* Selected Address */}
+          {selectedAddress && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Selected: {selectedAddress.display_name}
+            </Typography>
+          )}
+
+          <TextField
             value={specializationInput}
             onChange={(e) => setSpecializationInput(e.target.value)}
             onKeyPress={handleSpecializationKeyPress}
@@ -194,6 +284,28 @@ export default function DoctorDetailModal() {
                 key={index}
                 label={hospital}
                 onDelete={() => handleHospitalDelete(hospital)}
+                color="secondary"
+                sx={{ borderRadius: '4px' }}
+              />
+            ))}
+          </Box>
+
+          <TextField
+            value={phoneNumberInput}
+            onChange={(e) => setPhoneNumberInput(e.target.value)}
+            onKeyPress={handlePhoneNumberKeyPress}
+            label="Phone Number"
+            variant="outlined"
+            fullWidth
+            helperText="Press 'Enter' to add Phone Number"
+            sx={{ mb: 2 }}
+          />
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 4 }}>
+            {phoneNumber.map((phoneNumber, index) => (
+              <Chip
+                key={index}
+                label={phoneNumber}
+                onDelete={() => handlePhoneNumberDelete(phoneNumber)}
                 color="secondary"
                 sx={{ borderRadius: '4px' }}
               />

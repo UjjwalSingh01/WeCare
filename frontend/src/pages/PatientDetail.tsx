@@ -6,7 +6,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 // import PhoneInput from 'react-phone-number-input';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import image from '../assets/doctor.jpg'
+import image from '../assets/doctorf.avif'
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -78,9 +78,9 @@ const PatientDetail = () => {
           withCredentials: true
         })
 
-        setFullname(response.data.fullname || '')
-        setEmail(response.data.email || '')
-        setPatientPhone(response.data.patientPhone || '')
+        setFullname(response.data.fullname)
+        setEmail(response.data.email)
+        setPatientPhone(response.data.patientPhone)
         setDoctors(response.data.doctors)
 
       } catch (error) {
@@ -132,6 +132,8 @@ const PatientDetail = () => {
         medicalHistory,
         familyMedicalHistory,
         primaryPhysician
+      } , {
+        withCredentials: true
       })
 
       if(response.status === 200){
@@ -195,6 +197,7 @@ const PatientDetail = () => {
             label="Full Name"
             variant="outlined"
             fullWidth
+            value={fullname}
             sx={{ mb: 3 }}
           />
 
@@ -205,24 +208,15 @@ const PatientDetail = () => {
               id="outlined-basic"
               label="Email"
               variant="outlined"
+              value={email}
               sx={{ width: '100%' }}
             />
-            {/* <PhoneInput
-              placeholder="Enter phone number"
-              value={phoneNumber}
-              onChange={setPatientPhone}
-              defaultCountry="IN"
-              style={{
-                border: '2px solid lightgrey',
-                borderRadius: '8px',
-                padding: '10px',
-                width: '100%',
-              }}
-            /> */}
+            
             <TextField
               id="standard-basic"
               label="Phone Number"
               variant="standard"
+              value={phoneNumber}
               fullWidth
               onChange={(e) => {setPatientPhone(e.target.value)}}
               sx={{
@@ -286,18 +280,7 @@ const PatientDetail = () => {
               variant="outlined"
               sx={{ width: '100%' }}
             />
-            {/* <PhoneInput
-              placeholder="Enter phone number"
-              value={emergenyPhone}
-              onChange={setEmergenyPhone}
-              defaultCountry="IN"
-              style={{
-                border: '2px solid lightgrey',
-                borderRadius: '8px',
-                padding: '10px',
-                width: '100%',
-              }}
-            /> */}
+          
             <TextField
               id="standard-basic"
               label="Emergency Phone Number"
