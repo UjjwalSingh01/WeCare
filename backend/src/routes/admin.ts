@@ -500,6 +500,7 @@ router.post('/remove-doctor', async(req, res) => {
 router.post('/logout', async(req, res) => {
     try {
         res.clearCookie('Admin')
+        res.clearCookie('subAdmin')
 
         return res.status(200).json({
             message: 'Logout Successful'

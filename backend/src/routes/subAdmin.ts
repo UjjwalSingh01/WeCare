@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import { PrismaClient, Status } from "@prisma/client";
 import dayjs from "dayjs";
 import { z } from 'zod'
+import cors from 'cors';
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -17,6 +18,10 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors({
+    origin: 'http://localhost:5173', // Your frontend URL
+    credentials: true, // Allow credentials (cookies, headers)
+}));
 
 const router = express.Router();
 
@@ -66,7 +71,7 @@ const router = express.Router();
 //     }
 // })
 
-router.get('/subAdmin-dashbaord', async(req, res) => {
+router.get('/subAdmin-dashboard', async(req, res) => {
     try {
         const subAdminId: string = req.cookies.subAdmin
 
@@ -98,40 +103,40 @@ router.get('/subAdmin-dashbaord', async(req, res) => {
             select: {
               doctors: true,
             },
-          });
+        });
       
-          if (!subAdmin) {
+        if (!subAdmin) {
             throw new Error("SubAdmin not found");
-          }
-      
-          const doctorIds = subAdmin.doctors;
-      
-          const appointments = await prisma.appointment.findMany({
+        }
+    
+        const doctorIds = subAdmin.doctors;
+    
+        const appointments = await prisma.appointment.findMany({
             where: {
-              doctorId: {
-                in: doctorIds,
-              },
+                doctorId: {
+                    in: doctorIds,
+                },
             },
             select: {
-              id: true,
-              reason: true,
-              date: true,
-              time: true,
-              status: true,
-              patient: {
-                select: {
-                  fullname: true,
+                id: true,
+                reason: true,
+                date: true,
+                time: true,
+                status: true,
+                patient: {
+                    select: {
+                        fullname: true,
+                    },
                 },
-              },
-              doctor: {
-                select: {
-                  fullname: true,
+                doctor: {
+                    select: {
+                        fullname: true,
+                    },
                 },
-              },
             },
-          });
+        });
       
-          const formattedAppointments = appointments.map((appointment) => ({
+        const formattedAppointments = appointments.map((appointment) => ({
             appointmentId: appointment.id,
             patientName: appointment.patient.fullname,
             doctor: appointment.doctor.fullname,
@@ -139,7 +144,7 @@ router.get('/subAdmin-dashbaord', async(req, res) => {
             time: appointment.time,
             status: appointment.status,
             reason: appointment.reason,
-          }));
+        }));
 
         const now = dayjs();
   
