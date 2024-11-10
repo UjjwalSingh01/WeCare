@@ -1,9 +1,11 @@
 import express, { response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import cors from 'cors';
 import cookieParser from "cookie-parser";
 import { PrismaClient } from "@prisma/client";
 import { appointmentSchema, appointmentType } from "../schema";
+import dayjs from "dayjs";
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -11,6 +13,10 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors({
+    origin: 'http://localhost:5173', 
+    credentials: true,
+}));
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -19,6 +25,7 @@ const router = express.Router();
 router.get('/get-appointment', async(req, res) => {
     try {
         const patientId = await req.cookies.Patient
+        // console.log(req.cookies.Patient)
 
         const appointments = await prisma.appointment.findMany({
             where: {
@@ -76,6 +83,8 @@ router.post('/make-appointment', async(req, res) => {
             })
         }
 
+        // CANNOT MAKE AN APPOINTMENT BEFORE CURRET TIME
+
         const patientId = await req.cookies.Patient
 
         if(!patientId){
@@ -101,7 +110,8 @@ router.post('/make-appointment', async(req, res) => {
             where:{
                 doctorId: detail.physician,
                 date: detail.date,
-                time: detail.time
+                time: detail.time,
+                status: 'ACTIVE'
             }
         })
 
@@ -115,7 +125,8 @@ router.post('/make-appointment', async(req, res) => {
             where:{
                 patientId: patientId,
                 date: detail.date,
-                time: detail.time
+                time: detail.time,
+                status: 'ACTIVE'
             }
         })
 
@@ -152,6 +163,7 @@ router.post('/make-appointment', async(req, res) => {
 router.post('/cancel-appointment', async(req, res) => {
     try {
         const { id } = await req.body
+        console.log(id)
 
         const appointment = await prisma.appointment.findFirst({
             where:{
@@ -167,16 +179,21 @@ router.post('/cancel-appointment', async(req, res) => {
 
         await prisma.appointment.update({
             where:{
-                uniqueDoctorAppointment: {
-                    doctorId: appointment.doctorId,
-                    date: appointment.date,
-                    time: appointment.time
-                }
+                id: id
             },
             data:{
                 status: 'CANCELLED'
             }
         })
+
+        // await prisma.appointment.update({
+        //     where: {
+        //         id: id,
+        //     },
+        //     data: {
+        //         status: 'CANCELLED',
+        //     }
+        // });
 
         return res.status(200).json({
             message: 'Appointment Cancelled Successfully'

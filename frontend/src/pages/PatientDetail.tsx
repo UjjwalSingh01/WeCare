@@ -10,7 +10,6 @@ import image from '../assets/doctorf.avif'
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Define Zod schema for form validation
 const schema = z.object({
   fullname: z.string().min(2, 'Full Name must be at least 2 characters long'),
   email: z.string().email('Invalid email address'),
@@ -172,7 +171,6 @@ const PatientDetail = () => {
         }}
     >
   <div className="h-screen flex">
-    {/* Form Section */}
     <div className="w-full md:w-[80%] flex-col justify-center items-center py-10  md:px-24">
       {/* Header */}
       <section className="flex-col p-3 mb-8">

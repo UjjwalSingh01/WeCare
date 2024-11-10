@@ -12,10 +12,12 @@ const style = {
   left: '50%',
   transform: 'translate(-50%, -50%)',
   width: 500,
+  maxHeight: '90vh',
   bgcolor: 'background.paper',
   borderRadius: 8,
   boxShadow: 24,
   p: 4,
+  overflowY: 'auto',
 };
 
 export default function DoctorDetailModal() {
@@ -116,8 +118,8 @@ export default function DoctorDetailModal() {
       lon: parseFloat(address.lon),
       display_name: address.display_name,
     });
-    setAddress(address.display_name); // Set the address text field to the selected value
-    setAddressSuggestions([]); // Clear suggestions
+    setAddress(address.display_name); 
+    setAddressSuggestions([]); 
   };
 
 
@@ -227,7 +229,7 @@ export default function DoctorDetailModal() {
             fullWidth
             sx={{ mb: 2 }}
           />
-          {/* Address Suggestions */}
+          
           {addressSuggestions.length > 0 && (
             <List sx={{ maxHeight: 150, overflowY: 'auto', mb: 2, border: '1px solid #ccc', borderRadius: 1 }}>
               {addressSuggestions.map((suggestion, index) => (

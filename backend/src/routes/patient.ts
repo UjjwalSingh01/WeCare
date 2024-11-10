@@ -32,7 +32,7 @@ router.post('/register', async(req, res) => {
         }
 
         res.cookie("patientTemp", JSON.stringify(detail), {
-            httpOnly: false,
+            httpOnly: true,
             secure: false,
             maxAge: 10 * 60 * 1000,
             sameSite: "lax",
@@ -58,16 +58,15 @@ router.get('/get-patient', async(req, res) => {
         if (!cookieData) {
             return res.status(404).json({ error: "No cookie found" });
         }
-        console.log('h2')
+
         const parsedData = JSON.parse(cookieData);
-        console.log('h3')
         const zodResult = registerSchema.safeParse(parsedData);
         if (!zodResult.success) {
             return res.status(400).json({
                 error: "Invalid Request",
             });
         }
-        console.log('h4')
+
         const detail: registerType = zodResult.data;
 
         if(!detail){
@@ -101,7 +100,6 @@ router.get('/get-patient', async(req, res) => {
 
 router.post('/registerPatient', async(req, res) => {
     try {
-        console.log(req.body)
         const patientDetails: patientType = await req.body;
         const zodResult = registerSchema.safeParse(patientDetails)
         if(!zodResult.success){
@@ -114,12 +112,11 @@ router.post('/registerPatient', async(req, res) => {
         const existingPatient = await prisma.patient.findFirst({
             where: { email: patientDetails.email },
         });
-        
+
         if (existingPatient) {
             return res.status(400).json({ error: 'Email already exists.' });
         }
         
-
         const response = await prisma.patient.create({
             data: {
                 fullname: patientDetails.fullname,

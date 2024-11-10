@@ -1,8 +1,9 @@
 import express from 'express';
-import prisma from './prisma';  // Assuming you have your Prisma client setup
+import { PrismaClient } from "@prisma/client";
 import cron from 'node-cron';
 import dayjs from 'dayjs';
 
+const prisma = new PrismaClient();
 const app = express();
 
 // Schedule a task to run every day at 8 PM

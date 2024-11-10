@@ -60,7 +60,15 @@ const doctorSchema = z.object({
     rating: z
         .number()
         .min(1, { message: "Rating must be at least 1." })
-        .max(5, { message: "Rating must be at most 5." })
+        .max(5, { message: "Rating must be at most 5." }),
+    
+    phoneNumber: z
+        .array(z.string().nonempty("Phone Number cannot be an empty string."))
+        .min(1, "At least one Phone Number is required."),
+
+    address: z.string(),
+    latitude: z.number(),
+    longitude: z.number()
 });
 
 type doctorType = z.infer<typeof doctorSchema>

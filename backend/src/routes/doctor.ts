@@ -39,16 +39,26 @@ router.get('/get-doctor', async(req, res) => {
 
 router.get('/get-doctor/:id', async(req, res) => {
     try {
-        const DoctorId: string = await req.params.id
+        const DoctorId: string = req.params.id
 
         const response = await prisma.doctor.findFirst({
-            where:{
-                id: DoctorId
-            }, 
-            select:{
-                id: false
-            }
-        })
+            where: {
+                id: DoctorId,
+            },
+            select: {
+                fullname: true,
+                email: true,
+                specializations: true,
+                hospitals: true,
+                about: true,
+                phoneNumber: true,
+                address: true,
+                latitude: true,
+                longitude: true,
+                admin: true,
+                rating: true,
+            },
+        });
 
         if(!response){
             return res.json({

@@ -8,7 +8,7 @@ import axios from 'axios';
 import { DoctorDetails } from './PatientDetail';
 import image from '../assets/doctor3.jpg'
 import image1 from '../assets/doc1.png'
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 
@@ -38,8 +38,7 @@ const Appointment = () => {
     setOpenSnackbar(true);
   };
 
-  const navigate = useNavigate();
-
+  // const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDetails = async () => {

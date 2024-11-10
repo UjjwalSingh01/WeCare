@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import dayjs from 'dayjs'
 import { AddAdminSchema, AddAdminType, AddSubAdminSchema, AddSubAdminType, doctorSchema, doctorType } from "../schema";
 import { date } from "zod";
+import { error } from "console";
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 
 const prisma = new PrismaClient();
@@ -352,8 +353,9 @@ router.post('/remove-subadmin', async(req, res) => {
 router.post('/add-doctor', async(req, res) => {
     try {
         const details: doctorType = await req.body
-        const zodResult = await doctorSchema.safeParse(details)
+        const zodResult =  doctorSchema.safeParse(details)
         if(!zodResult.success){
+            console.log(zodResult.error)
             return res.status(400).json({
                 error: "Invalid Request",
               });
@@ -401,7 +403,11 @@ router.post('/add-doctor', async(req, res) => {
                 hospitals: details.hospitals,
                 about: details.about,
                 admin: findSubAdmin?.id,
-                rating: details.rating
+                rating: details.rating,
+                phoneNumber: details.phoneNumber,
+                address: details.address,
+                latitude: details.latitude,
+                longitude: details.longitude
             }
         })
 

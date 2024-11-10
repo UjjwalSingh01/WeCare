@@ -40,6 +40,10 @@ model Doctor {
   specializations   String[]     
   hospitals         String[]    
   about             String
+  phoneNumber       String[]
+  address           String
+  latitude          Float
+  longitude         Float
   admin             String?
   rating            Float       
   appointments      Appointment[]
@@ -57,8 +61,7 @@ model Appointment {
   time         String
   status       Status
 
-  @@unique([doctorId, date, time], name: "uniqueDoctorAppointment")
-  @@index([doctorId, status], name: "doctorStatusIndex") 
+  // @@index([doctorId, patientId], name: "doctorStatusIndex") 
 }
 
 
