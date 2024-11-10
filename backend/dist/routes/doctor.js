@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -25,9 +16,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // CHECK 1: A PATIENT CANNOT HAVE 5 ACTIVE APPOINTMENTS
 // CHECK 2: A PATIENT CANNOT MAKE APPOINTMENT AFTER 6 MONTHS
 const router = express_1.default.Router();
-router.get('/get-doctor', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/get-doctor', async (req, res) => {
     try {
-        const doctors = yield prisma.doctor.findMany({
+        const doctors = await prisma.doctor.findMany({
             select: {
                 id: true,
                 fullname: true
@@ -43,11 +34,11 @@ router.get('/get-doctor', (req, res) => __awaiter(void 0, void 0, void 0, functi
             error: "Error Retrieving ALL Doctors Details"
         });
     }
-}));
-router.get('/get-doctor/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.get('/get-doctor/:id', async (req, res) => {
     try {
         const DoctorId = req.params.id;
-        const response = yield prisma.doctor.findFirst({
+        const response = await prisma.doctor.findFirst({
             where: {
                 id: DoctorId,
             },
@@ -80,5 +71,5 @@ router.get('/get-doctor/:id', (req, res) => __awaiter(void 0, void 0, void 0, fu
             error: "Error Retrieving Doctor Details"
         });
     }
-}));
+});
 exports.doctortRoute = router;

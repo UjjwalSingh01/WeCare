@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -28,9 +19,9 @@ app.use((0, cors_1.default)({
     credentials: true, // Allow credentials (cookies, headers)
 }));
 const router = express_1.default.Router();
-router.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/register', async (req, res) => {
     try {
-        const detail = yield req.body;
+        const detail = await req.body;
         const zodResult = schema_1.registerSchema.safeParse(detail);
         if (!zodResult.success) {
             return res.status(400).json({
@@ -53,8 +44,8 @@ router.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, functio
             error: "Error in Patient Registration:"
         });
     }
-}));
-router.get('/get-patient', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.get('/get-patient', async (req, res) => {
     try {
         const cookieData = req.cookies.patientTemp;
         if (!cookieData) {
@@ -73,7 +64,7 @@ router.get('/get-patient', (req, res) => __awaiter(void 0, void 0, void 0, funct
                 error: "Unauthorized: Not Register"
             });
         }
-        const doctors = yield prisma.doctor.findMany({
+        const doctors = await prisma.doctor.findMany({
             select: {
                 id: true,
                 fullname: true
@@ -92,10 +83,10 @@ router.get('/get-patient', (req, res) => __awaiter(void 0, void 0, void 0, funct
             error: "Error Retrieving Patient Details"
         });
     }
-}));
-router.post('/registerPatient', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.post('/registerPatient', async (req, res) => {
     try {
-        const patientDetails = yield req.body;
+        const patientDetails = await req.body;
         const zodResult = schema_1.registerSchema.safeParse(patientDetails);
         if (!zodResult.success) {
             console.error(zodResult.error.issues);
@@ -103,13 +94,13 @@ router.post('/registerPatient', (req, res) => __awaiter(void 0, void 0, void 0, 
                 error: "Invalid Request",
             });
         }
-        const existingPatient = yield prisma.patient.findFirst({
+        const existingPatient = await prisma.patient.findFirst({
             where: { email: patientDetails.email },
         });
         if (existingPatient) {
             return res.status(400).json({ error: 'Email already exists.' });
         }
-        const response = yield prisma.patient.create({
+        const response = await prisma.patient.create({
             data: {
                 fullname: patientDetails.fullname,
                 email: patientDetails.email,
@@ -143,8 +134,8 @@ router.post('/registerPatient', (req, res) => __awaiter(void 0, void 0, void 0, 
             error: "Error Adding Patient Details"
         });
     }
-}));
-router.post('/logout', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.post('/logout', async (req, res) => {
     try {
         res.clearCookie('Patient');
         return res.json({
@@ -157,5 +148,5 @@ router.post('/logout', (req, res) => __awaiter(void 0, void 0, void 0, function*
             error: "Error in Patient Logout"
         });
     }
-}));
+});
 exports.patientRoute = router;

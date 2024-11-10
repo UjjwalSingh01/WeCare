@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -28,9 +19,9 @@ const transporter = nodemailer_1.default.createTransport({
         pass: process.env.SECRET_PASSWORD,
     },
 });
-const sendOtpEmail = (to, otp) => __awaiter(void 0, void 0, void 0, function* () {
+const sendOtpEmail = async (to, otp) => {
     try {
-        yield transporter.sendMail({
+        await transporter.sendMail({
             from: process.env.SECRET_EMAIL,
             to: to,
             subject: 'Please verify you email.',
@@ -41,11 +32,11 @@ const sendOtpEmail = (to, otp) => __awaiter(void 0, void 0, void 0, function* ()
     catch (error) {
         return "Something went wrong";
     }
-});
+};
 exports.sendOtpEmail = sendOtpEmail;
-const sendPromotionEmail = (to, message) => __awaiter(void 0, void 0, void 0, function* () {
+const sendPromotionEmail = async (to, message) => {
     try {
-        yield transporter.sendMail({
+        await transporter.sendMail({
             from: process.env.SECRET_EMAIL,
             to: to,
             subject: 'Congratulation',
@@ -57,5 +48,5 @@ const sendPromotionEmail = (to, message) => __awaiter(void 0, void 0, void 0, fu
         console.error('Error sending email:', error);
         throw new Error('Failed to send promotion email');
     }
-});
+};
 exports.sendPromotionEmail = sendPromotionEmail;

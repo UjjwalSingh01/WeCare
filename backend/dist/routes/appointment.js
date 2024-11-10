@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -29,11 +20,11 @@ app.use((0, cors_1.default)({
 }));
 const JWT_SECRET = process.env.JWT_SECRET;
 const router = express_1.default.Router();
-router.get('/get-appointment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/get-appointment', async (req, res) => {
     try {
-        const patientId = yield req.cookies.Patient;
+        const patientId = await req.cookies.Patient;
         // console.log(req.cookies.Patient)
-        const appointments = yield prisma.appointment.findMany({
+        const appointments = await prisma.appointment.findMany({
             where: {
                 patientId: patientId,
                 status: 'ACTIVE',
@@ -55,7 +46,7 @@ router.get('/get-appointment', (req, res) => __awaiter(void 0, void 0, void 0, f
             time: appointment.time,
             doctorName: appointment.doctor.fullname,
         }));
-        const doctors = yield prisma.doctor.findMany({
+        const doctors = await prisma.doctor.findMany({
             select: {
                 fullname: true,
                 id: true
@@ -72,10 +63,10 @@ router.get('/get-appointment', (req, res) => __awaiter(void 0, void 0, void 0, f
             error: "Error in Retrieving Appointments"
         });
     }
-}));
-router.post('/make-appointment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.post('/make-appointment', async (req, res) => {
     try {
-        const detail = yield req.body;
+        const detail = await req.body;
         const zodResult = schema_1.appointmentSchema.safeParse(detail);
         if (!zodResult.success) {
             return res.status(401).json({
@@ -83,13 +74,13 @@ router.post('/make-appointment', (req, res) => __awaiter(void 0, void 0, void 0,
             });
         }
         // CANNOT MAKE AN APPOINTMENT BEFORE CURRET TIME
-        const patientId = yield req.cookies.Patient;
+        const patientId = await req.cookies.Patient;
         if (!patientId) {
             return res.status(401).json({
                 error: "Unauthorized: Patient token not present",
             });
         }
-        const response = yield prisma.appointment.count({
+        const response = await prisma.appointment.count({
             where: {
                 patientId: patientId,
                 status: 'ACTIVE'
@@ -100,7 +91,7 @@ router.post('/make-appointment', (req, res) => __awaiter(void 0, void 0, void 0,
                 error: "You cannot have more than 5 appointments",
             });
         }
-        const duplicateAppointment = yield prisma.appointment.findFirst({
+        const duplicateAppointment = await prisma.appointment.findFirst({
             where: {
                 doctorId: detail.physician,
                 date: detail.date,
@@ -113,7 +104,7 @@ router.post('/make-appointment', (req, res) => __awaiter(void 0, void 0, void 0,
                 error: "Appointment is Not Available at this date and time",
             });
         }
-        const duplicatePatientAppointment = yield prisma.appointment.findFirst({
+        const duplicatePatientAppointment = await prisma.appointment.findFirst({
             where: {
                 patientId: patientId,
                 date: detail.date,
@@ -126,7 +117,7 @@ router.post('/make-appointment', (req, res) => __awaiter(void 0, void 0, void 0,
                 error: "You Already have an Appointment at this Date & Time",
             });
         }
-        yield prisma.appointment.create({
+        await prisma.appointment.create({
             data: {
                 doctorId: detail.physician,
                 patientId: patientId,
@@ -147,12 +138,12 @@ router.post('/make-appointment', (req, res) => __awaiter(void 0, void 0, void 0,
             error: "Internal Server Error: Unable to create appointment",
         });
     }
-}));
-router.post('/cancel-appointment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.post('/cancel-appointment', async (req, res) => {
     try {
-        const { id } = yield req.body;
+        const { id } = await req.body;
         console.log(id);
-        const appointment = yield prisma.appointment.findFirst({
+        const appointment = await prisma.appointment.findFirst({
             where: {
                 id: id
             }
@@ -162,7 +153,7 @@ router.post('/cancel-appointment', (req, res) => __awaiter(void 0, void 0, void 
                 error: "Appointment Not Present"
             });
         }
-        yield prisma.appointment.update({
+        await prisma.appointment.update({
             where: {
                 id: id
             },
@@ -188,11 +179,11 @@ router.post('/cancel-appointment', (req, res) => __awaiter(void 0, void 0, void 
             error: "Error in Cancelling Appointments"
         });
     }
-}));
-router.post('/update-appointment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.post('/update-appointment', async (req, res) => {
     try {
-        const detail = yield req.body;
-        const response = yield prisma.appointment.findFirst({
+        const detail = await req.body;
+        const response = await prisma.appointment.findFirst({
             where: {
                 id: detail.id
             }
@@ -202,7 +193,7 @@ router.post('/update-appointment', (req, res) => __awaiter(void 0, void 0, void 
                 error: "Appointment Does Not Exists"
             });
         }
-        yield prisma.appointment.update({
+        await prisma.appointment.update({
             where: {
                 id: detail.id
             },
@@ -220,5 +211,5 @@ router.post('/update-appointment', (req, res) => __awaiter(void 0, void 0, void 
             error: "Error in Updating Appointments"
         });
     }
-}));
+});
 exports.appointmentRoute = router;
