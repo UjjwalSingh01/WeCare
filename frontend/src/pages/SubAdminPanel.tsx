@@ -45,7 +45,9 @@ const SubAdminPanel = () => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/v1/subAdmin/subAdmin-dashboard');
+        const response = await axios.get('http://localhost:3000/api/v1/subAdmin/subAdmin-dashboard', {
+          withCredentials: true
+        });
 
         setName(response.data.name);
         setMonthly(response.data.monthly);

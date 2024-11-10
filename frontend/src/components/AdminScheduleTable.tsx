@@ -36,7 +36,7 @@ export default function ScheduleTable({appointments} : {appointments: Appointmen
   const rowsPerPage = 10;
 
   // Handle page change
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 

@@ -62,6 +62,8 @@ export default function PinModal() {
       const response = await axios.post('http://localhost:3000/api/v1/admin/admin-login', {
         email,
         pin
+      }, {
+        withCredentials: true
       })
 
       if(response.status === 200){

@@ -39,7 +39,7 @@ export default function SubAdminScheduleTable({appointments} : {appointments: Su
   const rowsPerPage = 10;
 
   // Handle page change
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 

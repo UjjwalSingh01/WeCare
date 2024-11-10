@@ -7,11 +7,14 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { Alert, Avatar, Button, Snackbar } from '@mui/material';
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function Navbar() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+  const navigate = useNavigate()
 
   const showSnackbar = (message: string, severity: "success" | "error") => {
     setSnackbarMessage(message);
@@ -21,9 +24,13 @@ export default function Navbar() {
   
   async function handleLogout() {
     try {
-      await axios.post('http://localhost:3000/api/v1/admin//logout')
+      await axios.post('http://localhost:3000/api/v1/admin/logout', {
+        withCredentials: true
+      })
 
-      showSnackbar("Error in Logout", "success");
+      showSnackbar("Logout Successfully", "success");
+      
+      navigate('/')
     } catch (error) {
       showSnackbar("Error in Logout", "error");
       console.error('Error in Logout: ', error)

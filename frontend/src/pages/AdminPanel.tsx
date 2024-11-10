@@ -66,7 +66,9 @@ const AdminPanel = () => {
    useEffect(() => {
     const fetchDetails = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/api/v1/admin/admin-dashboard')
+            const response = await axios.get('http://localhost:3000/api/v1/admin/admin-dashboard', {
+              withCredentials: true
+            })
 
             setName(response.data.name)
             setDoctor(response.data.doctors)
