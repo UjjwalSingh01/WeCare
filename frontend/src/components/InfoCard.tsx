@@ -46,7 +46,6 @@ export default function InfoCard({data, heading}: {data: number, heading: string
             }}
           >
             {heading}:
-            {/* Info Count */}
           </Typography>
           <Typography
             variant="h5"
@@ -59,7 +58,6 @@ export default function InfoCard({data, heading}: {data: number, heading: string
             }}
           >
             {data}
-            {/* Info Details */}
           </Typography>
         </CardContent>
       </Card>

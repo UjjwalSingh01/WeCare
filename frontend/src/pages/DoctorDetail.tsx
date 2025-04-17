@@ -1,34 +1,60 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Chip, 
+  useTheme,
+  useMediaQuery,
+  Link,
+  Divider
+} from "@mui/material";
+import axios from "axios";
+import {
+  LocationOn,
+  LocalHospital,
+  Work,
+  Phone,
+  Email,
+  Map
+} from "@mui/icons-material";
 
 interface DoctorDetails {
-  fullname: string;
+  fullName: string;
   about: string;
-  specializations: string[];
-  hospitals: string[];
+  specialties: string[];
+  hospitalAffiliations: string[];
   latitude: number;
   longitude: number;
-  phoneNumber: string[];
+  officePhone: string;
   email: string;
   address: string;
   rating: number;
-  admin: string;
+  managedBy: {
+    fullName: string;
+    email: string;
+  };
 }
 
 const DoctorDetailPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [doctor, setDoctor] = useState<DoctorDetails>({
     about: "The triple bar or tribar, ≡, is a symbol with multiple meanings.",
-    fullname: "Dr. Mentor Mount",
+    fullName: "Dr. Mentor Mount",
     email: "doctor@gmail.com",
-    specializations: ["General Medicine"],
-    hospitals: ["Community Hospital"],
+    specialties: ["General Medicine"],
+    hospitalAffiliations: ["Community Hospital"],
     latitude: 1.1,
     longitude: 2.2,
     address: "123 Example St, Example City",
-    phoneNumber: ["123-456-7890"],
+    officePhone: "123-456-7890",
     rating: 2,
-    admin: "hai koi",
+    managedBy: {
+      fullName: "Koi Hai",
+      email: 'koihai@gmail.com'
+    },
   });
 
   const location = useLocation();
@@ -37,82 +63,213 @@ const DoctorDetailPage = () => {
   useEffect(() => {
     const fetchDoctor = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3000/api/v1/doctor/get-doctor/${id}`
-        );
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/doctor/getDoctor/${id}`);
         setDoctor(response.data.doctor);
-        console.log(response.data.doctor);
       } catch (error) {
         console.error("Error in Fetching Doctor Details: ", error);
       }
     };
 
     fetchDoctor();
-  }, []);
+  }, [id]);
+
+  const InfoSection = ({ icon, title, children }: any) => (
+    <Paper elevation={3} sx={{ 
+      p: 3, 
+      mb: 4, 
+      borderRadius: 4,
+      width: '100%',
+      maxWidth: 800
+    }}>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        {icon}
+        <Typography variant="h5" sx={{ ml: 1.5, fontWeight: 600 }}>
+          {title}
+        </Typography>
+      </Box>
+      <Divider sx={{ mb: 2 }} />
+      {children}
+    </Paper>
+  );
 
   return (
-    <div className="h-full bg-blue-800 flex items-center justify-center p-4">
-      <div className="bg-blue-600 text-white p-16 m-14 rounded-lg shadow-lg w-full h-full">
-        <h1 className="text-5xl font-bold text-center mb-6 border-b border-white pb-2">
-          {doctor.fullname}
-        </h1>
-        <div className="flex flex-col md:flex-row items-center px-10 my-16">
-          <div className="w-3/5">
-            <h2 className="text-4xl font-semibold">About</h2>
-            <hr className="border-t border-gray-400 my-2" />
-            <p className="text-md lg:text-xl leading-relaxed">{doctor.about}</p>
-          </div>
-        </div>
+    <Box sx={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+      p: isMobile ? 2 : 4
+    }}>
+      <Box sx={{
+        maxWidth: 1200,
+        mx: "auto",
+        mt: isMobile ? 2 : 6,
+        mb: 6,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        {/* Header Section */}
+        <Paper elevation={4} sx={{
+          p: 4,
+          borderRadius: 4,
+          background: "linear-gradient(135deg, #3f51b5 0%, #2196f3 100%)",
+          color: "white",
+          mb: 4,
+          width: '100%',
+          maxWidth: 800
+        }}>
+          <Typography variant="h3" sx={{
+            fontWeight: 700,
+            textAlign: "center",
+            fontSize: isMobile ? "2.5rem" : "3.5rem"
+          }}>
+            {doctor.fullName}
+          </Typography>
+          <Typography variant="h6" sx={{
+            textAlign: "center",
+            mt: 2,
+            opacity: 0.9
+          }}>
+            Specialist in {doctor.specialties.join(", ")}
+          </Typography>
+        </Paper>
 
-        <div className="mt-10 px-10">
-          <h2 className="text-4xl font-semibold">Specialization</h2>
-          <hr className="border-t border-gray-400 my-2" />
-          {doctor.specializations.map((spec, index) => (
-            <span key={index} className="text-md lg:text-xl leading-relaxed">
-              {spec}&nbsp;&nbsp;,&nbsp;&nbsp;
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-10 px-10">
-          <h2 className="text-4xl font-semibold">Hospital</h2>
-          <hr className="border-t border-gray-400 my-2" />
-          {doctor.hospitals.map((hospital, index) => (
-            <span key={index} className="text-md lg:text-xl leading-relaxed">
-              {hospital}&nbsp;&nbsp;,&nbsp;&nbsp;
-            </span>
-          ))}
-        </div>
-
-        <div className="mt-10 px-10">
-          <h2 className="text-4xl font-semibold">Location</h2>
-          <hr className="border-t border-gray-400 my-2" />
-          <p className="text-md lg:text-xl leading-relaxed">
-            {doctor.address},&nbsp;
-            <a
-              href={`https://www.google.com/maps?q=${doctor.latitude},${doctor.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-300 underline"
+        {/* Main Content Container */}
+        <Box sx={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: 4,
+          width: '100%',
+          maxWidth: 1200,
+          justifyContent: 'center'
+        }}>
+          {/* Left Column */}
+          <Box sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            maxWidth: 800
+          }}>
+            <InfoSection
+              icon={<Work fontSize="large" />}
+              title="About & Expertise"
             >
-              Open in Google Maps
-            </a>
-          </p>
-        </div>
+              <Typography variant="body1" sx={{ fontSize: "1.1rem", lineHeight: 1.6 }}>
+                {doctor.about}
+              </Typography>
+            </InfoSection>
 
-        <div className="mt-10 px-10">
-          <h2 className="text-4xl font-semibold">Contact</h2>
-          <hr className="border-t border-gray-400 my-2" />
-          <p className="text-md lg:text-xl leading-relaxed">Email : {doctor.email}</p>
-          Phone :{" "}
-          {doctor.phoneNumber.map((phone, index) => (
-            <span key={index} className="text-md lg:text-xl leading-relaxed">
-              {phone}&nbsp;&nbsp;,&nbsp;&nbsp;
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+            <InfoSection
+              icon={<LocalHospital fontSize="large" />}
+              title="Hospital Affiliations"
+            >
+              <Box sx={{ 
+                display: "flex", 
+                flexWrap: "wrap", 
+                gap: 1,
+                justifyContent: isMobile ? 'center' : 'flex-start'
+              }}>
+                {doctor.hospitalAffiliations.map((hospital, index) => (
+                  <Chip
+                    key={index}
+                    label={hospital}
+                    color="primary"
+                    variant="outlined"
+                    sx={{ 
+                      fontSize: "1rem", 
+                      p: 1.5,
+                      mb: 1 
+                    }}
+                  />
+                ))}
+              </Box>
+            </InfoSection>
+          </Box>
+
+          {/* Right Column */}
+          <Box sx={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            maxWidth: 400
+          }}>
+            <InfoSection
+              icon={<LocationOn fontSize="large" />}
+              title="Location"
+            >
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {doctor.address}
+              </Typography>
+              <Link
+                href={`https://www.google.com/maps?q=${doctor.latitude},${doctor.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  color: "primary.main",
+                  textDecoration: "none",
+                  "&:hover": { textDecoration: "underline" }
+                }}
+              >
+                <Map sx={{ mr: 1 }} />
+                Open in Maps
+              </Link>
+            </InfoSection>
+
+            <InfoSection
+              icon={<Phone fontSize="large" />}
+              title="Contact Information"
+            >
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Email:
+                </Typography>
+                <Link
+                  href={`mailto:${doctor.email}`}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "text.primary",
+                    textDecoration: "none",
+                    "&:hover": { color: "primary.main" }
+                  }}
+                >
+                  <Email sx={{ mr: 1, fontSize: "1.2rem" }} />
+                  {doctor.email}
+                </Link>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Phone Numbers:
+                </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mt: 1
+                    }}
+                  >
+                    <Phone sx={{ mr: 1, fontSize: "1.2rem" }} />
+                    <Link
+                      href={`tel:${doctor.officePhone}`}
+                      sx={{
+                        color: "text.primary",
+                        textDecoration: "none",
+                        "&:hover": { color: "primary.main" }
+                      }}
+                    >
+                      {doctor.officePhone}
+                    </Link>
+                  </Box>
+              </Box>
+            </InfoSection>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

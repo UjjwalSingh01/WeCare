@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { TextField, MenuItem, Button, Typography, Snackbar, Alert, Card, CardContent, CardActions } from '@mui/material';
+import { TextField, MenuItem, Button, Typography, Card, CardContent, CardActions, Box, useTheme, useMediaQuery } from '@mui/material';
 import dayjs, {Dayjs} from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import axios from 'axios';
@@ -10,6 +10,7 @@ import image from '../assets/doctor3.jpg'
 import image1 from '../assets/doc1.png'
 // import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+import { AlertSnackbar } from '../components/AlertSnackbar';
 
 
 interface AppointmentDetails {
@@ -20,33 +21,32 @@ interface AppointmentDetails {
 }
 
 const Appointment = () => {
+  const theme = useTheme();
+  const isXlScreen = useMediaQuery(theme.breakpoints.up('xl'));
+
   const [schedule, setSchedule] = useState<Dayjs | null>(null);
   const [physician, setPhysician] = useState('');
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('')
   const [appointments, setAppointments] = useState<AppointmentDetails[]>([])
-
   const [doctors, setDoctors] = useState<DoctorDetails[]>([])
 
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info'
+  });
 
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setOpenSnackbar(true);
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbar({ open: true, message, severity });
   };
-
-  // const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/v1/appointment/get-appointment'
-          , {
-            withCredentials: true
-          })
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/appointment/getAppointments`, {
+          withCredentials: true
+        })
 
         setAppointments(response.data.appointments)
         setDoctors(response.data.doctors)
@@ -77,14 +77,14 @@ const Appointment = () => {
     setPhysician(event.target.value);
   };
 
-  async function onSubmit() {
+  async function handleSubmit() {
     try {
-      if(schedule === null || reason === "" || physician === ""){ 
+      if(!schedule || !reason || !physician ){ 
         showSnackbar("Error in Form", "error");
         return;
       }
       
-      const response = await axios.post('http://localhost:3000/api/v1/appointment/make-appointment', {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/appointment/makeAppointment`, {
         physician,
         reason,
         note,
@@ -94,36 +94,23 @@ const Appointment = () => {
         withCredentials: true
       })
 
-      if(response.status === 200){
-        showSnackbar("Appointment Completed", "success");
-        window.location.reload();
-        // navigate('/Appointment')
-      }
-      else {
-        showSnackbar(`${response.data.error}`, "error");
-        return;
-      }
-      
+      showSnackbar(`${response.data.message}`, "success");
+      window.location.reload();
+
     } catch (error) {
-      showSnackbar("Error in Appointment Submission", "error");
       console.error('Error in Appointment Submission: ', error)
+      showSnackbar("Error in Appointment Submission", "error");
     }
   }
 
   async function handleCancel(id: string) {
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/appointment/cancel-appointment', {
-        id
+      const response = await axios.delete(`${import.meta.env.VITE_BACKEND_API}/appointment/cancelAppointment/${id}`, {
+        withCredentials: true,
       })
 
-      if(response.status === 200){
-        showSnackbar("Appointment Cancelled Successfully", "success");
-        window.location.reload();
-      }
-      else {
-        showSnackbar(`${response.data.error}`, "error");
-        return;
-      }
+      showSnackbar(`${response.data.message}`, "success");
+      window.location.reload();
       
     } catch (error) {
       showSnackbar("Error in Cancelling Appointments", "error");
@@ -132,215 +119,222 @@ const Appointment = () => {
   }
 
   return (
-      <div className="w-screen h-screen flex relative">
-        
-        <section className="bg-red-400 w-[25%] h-full"
-          style={{
-            backgroundImage: `url(${image1})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backdropFilter: 'blur(30px)',
+    <Box sx={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: { xs: 'column', xl: 'row' },
+      background: `linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${image})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }}>
+      {/* Left Image Section (xl only) */}
+      {isXlScreen && (
+        <Box sx={{
+          width: '30%',
+          backgroundImage: `url(${image1})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }} />
+      )}
+
+      {/* Main Content */}
+      <Box sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        p: { xs: 2, md: 4 },
+        position: 'relative'
+      }}>
+
+        {/* Appointment Form */}
+        <Box sx={{
+          width: '100%',
+          maxWidth: 800,
+          bgcolor: 'background.paper',
+          borderRadius: 4,
+          boxShadow: 3,
+          p: { xs: 2, md: 4 },
+          mb: 4
+        }}>
+          <Typography variant="h3" sx={{
+            fontWeight: 'bold',
+            color: 'primary.main',
+            mb: 2,
+            fontSize: { xs: '2rem', md: '2.5rem' }
           }}>
-        </section>
+            WeCare
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'text.secondary', mb: 4 }}>
+            Book Your Appointment
+          </Typography>
 
-        <section className="bg-emerald-300 w-[75%] h-full flex justify-end items-center"
-          style={{
-            backgroundImage: `url(${image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backdropFilter: 'blur(30px)',
-          }}
-        >
-          
-          <div className="bg-white/80 w-full sm:w-[90%] md:w-[80%] lg:w-[70%] h-full sm:h-[80%] lg:h-[70%] mr-4 sm:mr-10 lg:mr-20 p-4 sm:p-6 md:p-16 flex-col justify-center items-center transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-2xl">
-            
-            <div className="">
-                <Typography
-                    variant="h3"
-                    gutterBottom
-                    align="left"
-                    className="text-blue-700 font-extrabold text-3xl sm:text-4xl lg:text-5xl"
-                >
-                    WeCare
-                </Typography>
-                <Typography
-                    variant="h6"
-                    gutterBottom
-                    align="left"
-                    className="text-gray-600 text-base sm:text-lg lg:text-xl"
-                >
-                    Book Your Appointments .....
-                </Typography>
-            </div>
-            
-            
-            <div className="py-4 sm:py-6">
-                <TextField
-                    id="outlined-select-currency"
-                    select
-                    label="Select"
-                    fullWidth
-                    helperText="Please select your Physician"
-                    value={physician}
-                    onChange={handleChange}
-                >
-                    {doctors.map((doctor, index) => (
-                        <MenuItem key={index} value={doctor.id} className="flex justify-between items-center">
-                            <span>{doctor.fullname}</span>
-                            <Link to="/DoctorDetailPage" state={doctor.id} className="ml-auto text-blue-500">
-                                ?
-                            </Link>
-                        </MenuItem>
-                    ))}
+          <TextField
+            select
+            fullWidth
+            label="Select Physician"
+            value={physician}
+            onChange={handleChange}
+            helperText="Please select your physician"
+            sx={{ mb: 3 }}
+          >
+            {doctors.map((doctor) => (
+              <MenuItem key={doctor.id} value={doctor.id}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  {doctor.fullName}
+                  <Link to="/DoctorDetailPage" state={doctor.id} style={{ color: 'primary.main' }}>
+                    View Details
+                  </Link>
+                </Box>
+              </MenuItem>
+            ))}
+          </TextField>
 
-                </TextField>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3,
+            mb: 3 
+          }}>
+            <TextField
+              label="Reason for Appointment"
+              multiline
+              rows={4}
+              fullWidth
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <TextField
+              label="Additional Notes"
+              multiline
+              rows={4}
+              fullWidth
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </Box>
 
-                <div className="flex flex-col md:flex-row gap-4 md:gap-16 justify-around mt-4">
-                    <TextField 
-                        id="outlined-multiline-static"
-                        label="Reason Of Appointment" 
-                        multiline
-                        rows={4}
-                        fullWidth
-                        margin="normal"
-                        onChange={(e) => {setReason(e.target.value)}}
-                    />
-                    
-                    <TextField 
-                        id="outlined-multiline-static"
-                        label="Additional Note" 
-                        multiline
-                        rows={4}
-                        fullWidth
-                        margin="normal"
-                        onChange={(e) => {setNote(e.target.value)}}
-                    />
-                </div>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateTimePicker
+              label="Schedule Appointment"
+              value={schedule}
+              onChange={setSchedule}
+              shouldDisableTime={shouldDisableTime}
+              sx={{ width: '100%', mb: 3 }}
+            />
+          </LocalizationProvider>
 
-                {/* DateTimePicker */}
-                <div className="mt-7 flex justify-center items-center">
-                    <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DateTimePicker
-                            label="Schedule Appointment"
-                            value={schedule}
-                            onChange={(newValue) => setSchedule(newValue)}
-                            shouldDisableTime={shouldDisableTime}
-                            sx={{
-                                width: '80%',
-                                borderRadius: '100px',
-                            }}
-                        />
-                    </LocalizationProvider>
-                </div>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleSubmit}
+            sx={{
+              py: 2,
+              background: 'linear-gradient(135deg, #6DD5FA 30%, #2980B9 90%)',
+              fontSize: '1.1rem',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2980B9 30%, #6DD5FA 90%)'
+              }
+            }}
+          >
+            Book Appointment
+          </Button>
+        </Box>
 
-                {/* Button */}
-                <div className="mt-7 flex justify-center items-center">
-                <Button
-                    variant="contained"
-                    onClick={() => {onSubmit()}}
-                    sx={{
-                        width: '60%',   
-                        md: '60%',       
-                        marginTop: 5,
-                        background: 'linear-gradient(135deg, #6DD5FA 30%, #2980B9 90%)',
-                        color: 'white',
-                        padding: '12px 20px',
-                        fontWeight: 'bold',
-                        borderRadius: '50px',
-                        boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.4)',  
-                        transition: 'all 0.3s ease',  
-                        '&:hover': {
-                            background: 'linear-gradient(135deg, #2980B9 30%, #6DD5FA 90%)',
-                            boxShadow: '0px 12px 30px rgba(0, 0, 0, 0.5)',
-                        },
-                        '&:active': {
-                            background: 'linear-gradient(135deg, #1F6D92 30%, #1A4C7E 90%)',  
-                            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.5)',  
-                            transform: 'translateY(4px)',
-                        },
-                    }}
-                >
-                Book Appointment
-                </Button>
-                </div>
-            </div>
-          </div>
-        </section>
+        {/* Active Appointments */}
+        <Box sx={{
+          width: '100%',
+          bgcolor: 'background.paper',
+          borderRadius: 4,
+          boxShadow: 3,
+          p: { xs: 2, md: 4 },
+          display: isXlScreen ? 'none' : 'block'
+        }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+            Active Appointments
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 2,
+            maxHeight: 400,
+            overflowY: 'auto'
+          }}>
+            {appointments.map((appointment) => (
+              <Card key={appointment.appointmentId}>
+                <CardContent>
+                  <Typography variant="h6">{appointment.doctorName}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {appointment.date} | {appointment.time}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'flex-end' }}>
+                  <Button 
+                    onClick={() => handleCancel(appointment.appointmentId)}
+                    color="error"
+                    variant="outlined"
+                  >
+                    Cancel
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        </Box>
 
-        <div className="bg-blue-400 w-[90%] sm:w-[425px] h-[50%] sm:h-[80%] shadow-2xl flex justify-center items-center rounded-tl-[100px] rounded-br-[100px] absolute top-[20%] sm:top-[10%] left-[10%] sm:left-[25%] transform -translate-x-1/2 rounded-lg transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-2xl">
-          <div className="bg-gradient-to-br p-6 rounded-lg h-[90%] w-[90%] overflow-y-auto">
-            <Typography variant="h5" component="h4" align='center' className="text-white font-bold mb-4">
+        {/* XL Screen Appointments */}
+        {isXlScreen && (
+          <Box sx={{
+            position: 'absolute',
+            left: '-25%',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '30%',
+            bgcolor: 'background.paper',
+            borderRadius: 4,
+            boxShadow: 3,
+            p: 2,
+            maxHeight: '60vh',
+            overflowY: 'auto'
+          }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
               Active Appointments
             </Typography>
-            <div className="space-y-4 mt-4">
-              {appointments.map((appointment) => {
-                return (
-                  <Card className="bg-white shadow-md rounded-lg p-1 hover:shadow-xl transition-shadow duration-300">
-                    <CardContent>
-                      <Typography variant="h6" component="div" className="text-gray-800 font-semibold">
-                        Dr. {appointment.doctorName}
-                      </Typography>
-                      <Typography variant="body2" component="p" className="text-gray-600">
-                        Date: {appointment.date} | Time: {appointment.time}
-                      </Typography>
-                    </CardContent>
-                    <CardActions className="flex justify-end">
-                      <Button
-                        onClick={() => handleCancel(appointment.appointmentId)}
-                        variant="contained"
-                        color="secondary"
-                        className="bg-red-500 hover:bg-red-600 text-white rounded-full"
-                        sx={{ px: 3, py: 1, borderRadius: '20px' }}
-                      >
-                        Cancel
-                      </Button>
-                    </CardActions>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {appointments.map((appointment) => (
+                <Card key={appointment.appointmentId}>
+                  <CardContent>
+                    <Typography variant="h6">{appointment.doctorName}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {appointment.date} | {appointment.time}
+                    </Typography>
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: 'flex-end' }}>
+                    <Button 
+                      onClick={() => handleCancel(appointment.appointmentId)}
+                      color="error"
+                      variant="outlined"
+                    >
+                      Cancel
+                    </Button>
+                  </CardActions>
+                </Card>
+              ))}
+            </Box>
+          </Box>
+        )}
+      </Box>
 
-        </div>
-
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={6000}
-          onClose={() => setOpenSnackbar(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          sx={{
-            width: '400px',
-            borderRadius: '8px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            padding: '0',
-            '& .MuiSnackbarContent-root': {
-              padding: 0,
-            },
-          }}
-        >
-        <Alert
-          onClose={() => setOpenSnackbar(false)}
-          severity={snackbarSeverity}
-          sx={{
-            background: snackbarSeverity === 'success'
-              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
-              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            borderRadius: '8px',
-            padding: '16px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            width: '100%',
-            '& .MuiAlert-icon': {
-              fontSize: '28px',
-            },
-          }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-      </div>
+      <AlertSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        position={{ vertical: 'bottom', horizontal: 'right' }}
+      />
+    </Box>
   );
 };
 

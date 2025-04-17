@@ -1,64 +1,70 @@
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { Card, TextField, Button, Typography, FormControl, RadioGroup, FormControlLabel, Radio, MenuItem, Snackbar, Alert } from '@mui/material';
+import { Card, TextField, Button, Typography, FormControl, RadioGroup, FormControlLabel, Radio, MenuItem, Box, useMediaQuery, useTheme } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
-// import PhoneInput from 'react-phone-number-input';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import image from '../assets/doctorf.avif'
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { AlertSnackbar } from '../components/AlertSnackbar';
 
 const schema = z.object({
-  fullname: z.string().min(2, 'Full Name must be at least 2 characters long'),
-  email: z.string().email('Invalid email address'),
-  phoneNumber: z.string().length(10, 'Phone number must be at least 10 characters long'),
-  dob: z.string().nonempty('Date of Birth is required'),
-  gender: z.string().nonempty('Gender is required'),
-  address: z.string().optional(),
+  email: z.string().email('Enter Correct Email Format'),
+  fullName: z.string().min(2, 'Name Must Contain Atleast 2 Characters'),
+  // phoneNumber :z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"),
+  phoneNumber :z.string().length(10, 'Phone Number Must Contain Only 10 digits'),
+  dob: z.string(),
+  gender: z.enum(['MALE', 'FEMALE' , 'OTHER']),
+  address: z.string(),
   emergencyContactName: z.string().optional(),
-  emergenyPhone: z.string().length(10, 'Phone Number Must Contain Only 10 digits'),
+  emergencyContactNumber: z.string().length(10, 'Phone Number Must Contain Only 10 digits'),
   allergies: z.string().optional(),
-  medications: z.string().optional(),
-  medicalHistory: z.string().optional(),
+  currentMedications: z.string().optional(),
+  medicalHistory:z.string().optional(),
   familyMedicalHistory: z.string().optional(),
-  primaryPhysician: z.string().optional(),
-});
+  insuranceProvider: z.string().optional(),
+  policyNumber: z.string().optional(),
+})
 
 
 export interface DoctorDetails {
   id: string;
-  fullname: string;
+  fullName: string;
 }
 
 const PatientDetail = () => {
   const [doctors, setDoctors] = useState<DoctorDetails[]>([])
 
-  const [fullname, setFullname] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('')
   const [phoneNumber, setPatientPhone] = useState<string | undefined>('');
   const [value, setValue] = useState<Dayjs | null>(dayjs(''));
   const [gender, setGender] = useState('')
   const [address, setAddress] = useState('')
-  const [emergenyPhone, setEmergenyPhone] = useState<string | undefined>('');
+  const [emergencyContactNumber, setEmergencyContactNumber] = useState<string | undefined>('');
   const [emergencyContactName, setEmergencyContactName] = useState('')
   const [primaryPhysician,setPhysician] = useState('')
   const [allergies, setAllergies] = useState('');
-  const [medications, setMedications] = useState('');
+  const [currentMedications, setCurrentMedications] = useState('');
   const [medicalHistory, setMedicalHistory] = useState('')
   const [familyMedicalHistory, setFamilyMedicalHistory] = useState('')
+  const [insuranceProvider, setInsuranceProvider] = useState('');
+  const [policyNumber, setPolicyNumber] = useState('')
 
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info'
+  });
 
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setOpenSnackbar(true);
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbar({ open: true, message, severity });
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate()
 
   const handleGenderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,19 +78,22 @@ const PatientDetail = () => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/v1/patient/get-patient',
-        {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/patient/get-patient`,{
           withCredentials: true
         })
 
-        setFullname(response.data.fullname)
+        setFullName(response.data.fullName)
         setEmail(response.data.email)
-        setPatientPhone(response.data.patientPhone)
+        setPatientPhone(response.data.phoneNumber)
         setDoctors(response.data.doctors)
 
       } catch (error) {
-        showSnackbar("Error in Fetching Patient Details", "error");
-        console.error('Error in Fetching Patient Details: ', error)
+        if (axios.isAxiosError(error)) {
+          console.error('Backend error:', error.response?.data);
+          showSnackbar(`${error.response?.data}`, "error");
+        } else {
+          console.error('Unexpected error:', error);
+        }
       }
     }
 
@@ -94,19 +103,20 @@ const PatientDetail = () => {
   async function onSubmit() {
     try {
       const parseData = schema.safeParse({
-        fullname,
+        fullName,
         email,
         phoneNumber,
         dob: value?.format('MMMM D, YYYY') || '',
         gender,
         address,
-        emergenyPhone,
         emergencyContactName,
+        emergencyContactNumber,
         allergies,
-        medications,
+        currentMedications,
         medicalHistory,
         familyMedicalHistory,
-        primaryPhysician
+        insuranceProvider,
+        policyNumber
       })
 
       if(!parseData.success){
@@ -117,115 +127,115 @@ const PatientDetail = () => {
         return;
       } 
       
-      const response = await axios.post('http://localhost:3000/api/v1/patient/registerPatient', {
-        fullname,
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/patient/registerPatient`, {
+        fullName,
         email,
         phoneNumber,
         dob: value?.format('MMMM D, YYYY'),
         gender: gender.toUpperCase(),
         address,
-        emergenyPhone,
         emergencyContactName,
+        emergencyContactNumber,
         allergies,
-        medications,
+        currentMedications,
         medicalHistory,
         familyMedicalHistory,
-        primaryPhysician
+        insuranceProvider,
+        policyNumber
       } , {
         withCredentials: true
       })
 
-      if(response.status === 200){
-        showSnackbar('Patient details submitted successfully!', 'success');
-        navigate('/Appointment')
-      }
-      else {
-        showSnackbar('Error in Posting Patient Details', 'error');
-        return;
-      }
+      showSnackbar(`${response.data.message}`, 'success');
+      navigate('/Appointment')
 
     } catch (error) {
-      showSnackbar("Error in Posting Patient Details", "error");
-      console.error('Error in Posting Patient Details')
+      // showSnackbar("Error in Posting Patient Details", "error");
+      // console.error('Error in Posting Patient Details')
+      if (axios.isAxiosError(error)) {
+        console.error('Backend error:', error.response?.data);
+        showSnackbar(`${error.response?.data}`, "error");
+      } else {
+        console.error('Unexpected error:', error);
+      }
     }
   }
 
   return (
     <Card 
-        sx={{
-            width: { xs: '95%', md: '90%' },
-            mx: 'auto',
-            my: 3,
-            overflowY: 'auto',
-            scrollbarWidth: 'none',
-            '&::-webkit-scrollbar': { display: 'none' },
-            // py: 1,
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            '&:hover': {
-                transform: 'translateY(-10px)',
-                boxShadow: '0px 10px 24px rgba(0, 0, 0, 0.2)',
-            },
-            backgroundColor: 'background.paper',
-            borderRadius: '12px',
-        }}
+      sx={{
+        width: { xs: '95%', md: '90%' },
+        mx: 'auto',
+        my: 3,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        borderRadius: '12px',
+        boxShadow: 3,
+      }}
     >
-  <div className="h-screen flex">
-    <div className="w-full md:w-[80%] flex-col justify-center items-center py-10  md:px-24">
-      {/* Header */}
-      <section className="flex-col p-3 mb-8">
-        <Typography variant="h3" align="left" sx={{ fontWeight: 'bold', color: 'primary.dark' }}>
-          WeCare
-        </Typography>
-        <Typography variant="h6" align="left" sx={{ color: 'primary.main' }}>
-          Patient Details
-        </Typography>
-      </section>
+      {/* Main Content */}
+      <Box sx={{ 
+        flex: 1, 
+        p: { xs: 2, md: 6 },
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Header */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h3" sx={{ 
+            fontWeight: 'bold', 
+            color: 'primary.dark',
+            fontSize: { xs: '2rem', md: '3rem' }
+          }}>
+            WeCare
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'primary.main' }}>
+            Patient Details
+          </Typography>
+        </Box>
 
-      {/* Personal Information */}
-      <section className="flex-col gap-6">
-        <Typography align="left" variant="h4" sx={{ fontFamily: 'cursive', color: 'text.primary', mb: 4 }}>
-          Personal Information
-        </Typography>
-        <div className="flex-col gap-4">
-          {/* Full Name */}
+        {/* Personal Information */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Typography variant="h4" sx={{ 
+            fontFamily: 'cursive', 
+            color: 'text.primary',
+            fontSize: { xs: '1.5rem', md: '2rem' }
+          }}>
+            Personal Information
+          </Typography>
+
           <TextField
-            onChange={(e) => {setFullname(e.target.value)}}
-            id="outlined-basic"
-            label="Full Name"
-            variant="outlined"
             fullWidth
-            value={fullname}
-            sx={{ mb: 3 }}
+            label="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
           />
 
-          {/* Email and Phone */}
-          <div className="flex flex-col md:flex-row gap-4">
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3 
+          }}>
             <TextField
-              onChange={(e) => {setEmail(e.target.value)}}
-              id="outlined-basic"
-              label="Email"
-              variant="outlined"
-              value={email}
-              sx={{ width: '100%' }}
-            />
-            
-            <TextField
-              id="standard-basic"
-              label="Phone Number"
-              variant="standard"
-              value={phoneNumber}
               fullWidth
-              onChange={(e) => {setPatientPhone(e.target.value)}}
-              sx={{
-                input: { padding: '8px 12px', borderRadius: '5px', },
-                mb: 2,
-              }}
+              label="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
-          </div>
+            <TextField
+              fullWidth
+              label="Phone Number"
+              value={phoneNumber}
+              onChange={(e) => setPatientPhone(e.target.value)}
+            />
+          </Box>
 
-          {/* Date of Birth and Gender */}
-          <div className="flex flex-col md:flex-row gap-4 mt-5">
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3 
+          }}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Date of Birth"
@@ -234,164 +244,191 @@ const PatientDetail = () => {
                 sx={{ width: '100%' }}
               />
             </LocalizationProvider>
-            <FormControl sx={{ width: '100%' }}>
+
+            <FormControl fullWidth>
+              <Typography>
+                Gender
+              </Typography>
               <RadioGroup
-                value={gender} 
+                value={gender}
                 onChange={handleGenderChange}
-                row
-                name="gender"
-                sx={{ justifyContent: 'space-around' }}
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'row' , 
+                  justifyContent: 'space-around',
+                  gap: 2
+                }}
               >
-                <FormControlLabel 
-                  sx={{ border: '2px dotted lightgrey', pr: 0.5 }} 
-                  value="FEMALE" control={<Radio />} label="Female" 
-                />
-                <FormControlLabel 
-                  sx={{ border: '2px dotted lightgrey', pr: 0.5 }} 
-                  value="MALE" control={<Radio />} label="Male" 
-                />
-                <FormControlLabel 
-                  sx={{ border: '2px dotted lightgrey', pr: 0.5 }} 
-                  value="OTHER" control={<Radio />} label="Other" 
-                />
+                {['FEMALE', 'MALE', 'OTHER'].map((option) => (
+                  <FormControlLabel
+                    key={option}
+                    value={option}
+                    control={<Radio />}
+                    label={option.charAt(0) + option.slice(1).toLowerCase()}
+                    sx={{ 
+                      m: 0,
+                      '& .MuiFormControlLabel-label': { 
+                        fontSize: { xs: '0.8rem', md: '1rem' } 
+                      }
+                    }}
+                  />
+                ))}
               </RadioGroup>
             </FormControl>
-          </div>
+          </Box>
 
-          {/* Address */}
           <TextField
-            onChange={(e) => {setAddress(e.target.value)}}
-            id="outlined-multiline-static"
-            label="Address"
+            fullWidth
             multiline
             rows={4}
-            fullWidth
-            sx={{ mt: 5 }}
+            label="Address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
 
-          {/* Emergency Contact */}
-          <div className="flex flex-col md:flex-row gap-4 mt-5">
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3 
+          }}>
             <TextField
-              onChange={(e) => {setEmergencyContactName(e.target.value)}}
-              id="outlined-basic"
-              label="Emergency Contact Name"
-              variant="outlined"
-              sx={{ width: '100%' }}
-            />
-          
-            <TextField
-              id="standard-basic"
-              label="Emergency Phone Number"
-              variant="standard"
               fullWidth
-              onChange={(e) => {setEmergenyPhone(e.target.value)}}
-              sx={{
-                input: { padding: '8px 12px', borderRadius: '5px', },
-                mb: 2,
-              }}
+              label="Emergency Contact Name"
+              value={emergencyContactName}
+              onChange={(e) => setEmergencyContactName(e.target.value)}
             />
-          </div>
-        </div>
-      </section>
+            <TextField
+              fullWidth
+              label="Emergency Phone Number"
+              value={emergencyContactNumber}
+              onChange={(e) => setEmergencyContactNumber(e.target.value)}
+            />
+          </Box>
+        </Box>
 
-      {/* Medical Information */}
-      <section className="my-8  mt-10">
-        <Typography align="left" variant="h4" sx={{ fontFamily: 'cursive', color: 'text.primary', mb: 2 }}>
-          Medical Information
-        </Typography>
-        <div className="flex-col gap-6">
+        {/* Medical Information */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3, mt: 4 }}>
+          <Typography variant="h4" sx={{ 
+            fontFamily: 'cursive', 
+            color: 'text.primary',
+            fontSize: { xs: '1.5rem', md: '2rem' }
+          }}>
+            Medical Information
+          </Typography>
+
           <TextField
+            select
+            fullWidth
+            label="Select Physician"
             value={primaryPhysician}
             onChange={handleChange}
-            id="outlined-select-currency"
-            select
-            label="Select Physician"
-            fullWidth
             helperText="Please select your Physician"
-            sx={{ mb: 3 }}
           >
-            {doctors.map((doctor, index) => (
-              <MenuItem key={index} value={doctor.id}>
-                {doctor.fullname}
+            {doctors.map((doctor) => (
+              <MenuItem key={doctor.id} value={doctor.id}>
+                {doctor.fullName}
               </MenuItem>
             ))}
           </TextField>
 
-          <div className="flex flex-col md:flex-row gap-4">
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3 
+          }}>
             <TextField
-              onChange={(e) => {setAllergies(e.target.value)}}
+              fullWidth
+              label="Policy Number"
+              value={policyNumber}
+              onChange={(e) => setPolicyNumber(e.target.value)}
+            />
+            <TextField
+              fullWidth
+              label="Insurance Provider"
+              value={insuranceProvider}
+              onChange={(e) => setInsuranceProvider(e.target.value)}
+            />
+          </Box>
+
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3 
+          }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
               label="Allergies (if any)"
-              multiline
-              rows={4}
-              sx={{ width: '100%' }}
+              value={allergies}
+              onChange={(e) => setAllergies(e.target.value)}
             />
             <TextField
-              onChange={(e) => {setMedications(e.target.value)}}
+              fullWidth
+              multiline
+              rows={4}
               label="Current Medications"
+              value={currentMedications}
+              onChange={(e) => setCurrentMedications(e.target.value)}
+            />
+          </Box>
+
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, 
+            gap: 3 
+          }}>
+            <TextField
+              fullWidth
               multiline
               rows={4}
-              sx={{ width: '100%' }}
-            />
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 mt-5">
-            <TextField
-              onChange={(e) => {setMedicalHistory(e.target.value)}}
               label="Medical History"
-              multiline
-              rows={4}
-              sx={{ width: '100%' }}
+              value={medicalHistory}
+              onChange={(e) => setMedicalHistory(e.target.value)}
             />
             <TextField
-              onChange={(e) => {setFamilyMedicalHistory(e.target.value)}}
-              label="Family Medical History (if relevant)"
+              fullWidth
               multiline
               rows={4}
-              sx={{ width: '100%' }}
+              label="Family Medical History"
+              value={familyMedicalHistory}
+              onChange={(e) => setFamilyMedicalHistory(e.target.value)}
             />
-          </div>
-        </div>
-      </section>
+          </Box>
+        </Box>
 
-      {/* Upload Report */}
-      <section className="my-7">
-        <Button
-          component="label"
-          variant="contained"
-          startIcon={<CloudUploadIcon />}
-          sx={{
-            width: 250,
-            height: 100,
-            background: 'linear-gradient(135deg, #27ae60 30%, #2ecc71 90%)',
-            color: 'white',
-            fontWeight: 'bold',
-            borderRadius: '12px',
-            boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.2)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #2ecc71 30%, #27ae60 90%)',
-            },
-          }}
-        >
-          Upload Report
-          <br />
-          (if any)
-        </Button>
-      </section>
+        {/* Upload Section */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <Button
+            component="label"
+            variant="contained"
+            startIcon={<CloudUploadIcon />}
+            sx={{
+              width: { xs: '100%', md: 250 },
+              height: { xs: 80, md: 100 },
+              background: 'linear-gradient(135deg, #27ae60 30%, #2ecc71 90%)',
+              borderRadius: '12px',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2ecc71 30%, #27ae60 90%)',
+              },
+            }}
+          >
+            Upload Report
+            <br />
+            (if any)
+          </Button>
+        </Box>
 
-      {/* Continue Button */}
-      <section>
+        {/* Submit Button */}
         <Button
-          onClick={() => {onSubmit()}}
-          variant="contained"
           fullWidth
+          variant="contained"
+          onClick={onSubmit}
           sx={{
+            py: 2,
             background: 'linear-gradient(135deg, #2980b9 30%, #3498db 90%)',
-            color: 'white',
-            padding: '12px 20px',
-            fontWeight: 'bold',
             borderRadius: '50px',
-            mb:2,
-            boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.2)',
+            fontSize: { xs: '1rem', md: '1.1rem' },
             '&:hover': {
               background: 'linear-gradient(135deg, #3498db 30%, #2980b9 90%)',
             },
@@ -399,54 +436,38 @@ const PatientDetail = () => {
         >
           Continue
         </Button>
-      </section>
-    </div>
+      </Box>
 
-    {/* Image Section */}
-    <div className="hidden md:block w-[30%]">
-      <img src={image} alt="Doctor" className="h-full object-cover rounded-l-lg shadow-lg" />
-    </div>
-  
-    <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        sx={{
-          width: '400px',
-          borderRadius: '8px',
-          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-          padding: '0',
-          '& .MuiSnackbarContent-root': {
-            padding: 0,
-          },
-        }}
-      >
-        <Alert
-          onClose={() => setOpenSnackbar(false)}
-          severity={snackbarSeverity}
-          sx={{
-            background: snackbarSeverity === 'success'
-              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
-              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            borderRadius: '8px',
-            padding: '16px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            width: '100%',
-            '& .MuiAlert-icon': {
-              fontSize: '28px',
-            },
-          }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-      </div>
+      {/* Image Section */}
+      {!isMobile && (
+        <Box sx={{ 
+          width: '30%', 
+          minHeight: '100%',
+          display: { xs: 'none', md: 'block' }
+        }}>
+          <Box
+            component="img"
+            src={image}
+            alt="Doctor"
+            sx={{
+              height: '100%',
+              width: '100%',
+              objectFit: 'cover',
+              borderTopRightRadius: '12px',
+              borderBottomRightRadius: '12px'
+            }}
+          />
+        </Box>
+      )}
+
+      <AlertSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        position={{ vertical: 'bottom', horizontal: 'right' }}
+      />
     </Card>
-
   );
 };
 

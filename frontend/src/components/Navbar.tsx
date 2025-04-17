@@ -4,43 +4,56 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Alert, Avatar, Button, Snackbar } from '@mui/material';
-import { useState } from 'react';
+import { Avatar, Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import {
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Settings as SettingsIcon,
+  ExitToApp as ExitToAppIcon,
+} from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { AlertSnackbar } from './AlertSnackbar';
 
-export default function Navbar() {
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+export const AdminNavbar: React.FC<{ userRole: 'SUPER_ADMIN' | 'FACILITY_ADMIN' | undefined }> = ({ userRole }) => {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info'
+  });
 
-  const navigate = useNavigate()
-
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setOpenSnackbar(true);
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+    setSnackbar({ open: true, message, severity });
   };
-  
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
   async function handleLogout() {
     try {
-      await axios.post('http://localhost:3000/api/v1/admin/logout', {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API}/admin/logout`, {
         withCredentials: true
-      })
-
+      });
       showSnackbar("Logout Successfully", "success");
-      
-      navigate('/')
+      navigate('/');
     } catch (error) {
       showSnackbar("Error in Logout", "error");
-      console.error('Error in Logout: ', error)
+      console.error('Error in Logout: ', error);
     }
   }
-  
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static">
-        <Toolbar sx={{height:75}}>
+        <Toolbar sx={{ height: 75 }}>
           <IconButton
             size="large"
             edge="start"
@@ -50,64 +63,100 @@ export default function Navbar() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography 
-            variant="h6" 
-            align='left' 
-            component="div" 
-            sx={{ 
+          <Typography
+            variant="h6"
+            align='left'
+            component="div"
+            sx={{
               flexGrow: 1,
-              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' } 
+              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' }
             }}
           >
             WeCare
           </Typography>
-          <Avatar
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar
               alt="Username"
               src="/static/images/avatar/1.jpg"
             />
-            <Typography variant="h6" noWrap>
-              &nbsp; Admin
-            </Typography>
-            <Button sx={{ color: 'white' }} onClick={() => {handleLogout()}}>Logout</Button>
+            <Button
+              color="inherit"
+              onClick={handleMenuOpen}
+              aria-controls="admin-menu"
+              aria-haspopup="true"
+            >
+              Admin
+            </Button>
+            <Menu
+              id="admin-menu"
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              {userRole === 'SUPER_ADMIN' ? (
+                <>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/admin/dashboard'); }}>
+                    <ListItemIcon>
+                      <DashboardIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Dashboard</ListItemText>
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/admin/administration'); }}>
+                    <ListItemIcon>
+                      <PeopleIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Administration</ListItemText>
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/admin/doctor'); }}>
+                    <ListItemIcon>
+                      <SettingsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Doctor</ListItemText>
+                  </MenuItem>
+                </>
+              ) : (
+                <>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/subadmin/dashboard'); }}>
+                    <ListItemIcon>
+                      <DashboardIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Dashboard</ListItemText>
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleMenuClose(); navigate('/subadmin/doctor'); }}>
+                    <ListItemIcon>
+                      <SettingsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Doctor</ListItemText>
+                  </MenuItem>
+                </>
+              )}
+
+              <hr />
+              <MenuItem onClick={() => { handleMenuClose(); handleLogout(); }}>
+                <ListItemIcon>
+                  <ExitToAppIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Logout</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
         </Toolbar>
       </AppBar>
-      <Snackbar
-          open={openSnackbar}
-          autoHideDuration={6000}
-          onClose={() => setOpenSnackbar(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          sx={{
-            width: '400px',
-            borderRadius: '8px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            padding: '0',
-            '& .MuiSnackbarContent-root': {
-              padding: 0,
-            },
-          }}
-        >
-        <Alert
-          onClose={() => setOpenSnackbar(false)}
-          severity={snackbarSeverity}
-          sx={{
-            background: snackbarSeverity === 'success'
-              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
-              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            borderRadius: '8px',
-            padding: '16px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            width: '100%',
-            '& .MuiAlert-icon': {
-              fontSize: '28px',
-            },
-          }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      <AlertSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        position={{ vertical: 'bottom', horizontal: 'right' }}
+      />
     </Box>
   );
 }

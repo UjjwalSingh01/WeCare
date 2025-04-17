@@ -1,8 +1,9 @@
 import { Box, Card, CardContent, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { MonthDetails } from '../pages/AdminPanel';
+import React from 'react';
+import { MonthlyDetails } from '../pages/SubAdminPanel/Dashboard';
 
-export default function MonthInfoCard({ data }: { data: MonthDetails }) {
+const MonthInfoCard: React.FC<{ data: MonthlyDetails }> = ({ data }) => {
   const theme = useTheme();
 
   return (
@@ -52,7 +53,7 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
           >
             <Typography
               sx={{
-                fontSize: { xs: '1.00rem', sm: '1.25rem', md: '2rem' },
+                fontSize: { xs: '1.00rem', sm: '1.25rem', md: '1.50rem' },
                 fontWeight: 'bold',
                 color: theme.palette.primary.main,
                 marginRight: 2,
@@ -81,7 +82,7 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
             justifyContent: 'flex-end',
             alignItems: 'center',
             position: 'absolute',
-            bottom: 16,
+            bottom: 10,
             right: 16,
             width: '100%',
           }}
@@ -112,3 +113,5 @@ export default function MonthInfoCard({ data }: { data: MonthDetails }) {
     </Box>
   );
 }
+
+export default MonthInfoCard;

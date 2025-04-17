@@ -3,8 +3,9 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Modal from '@mui/material/Modal';
 import { useState } from 'react';
-import { Alert, Chip, List, ListItem, ListItemButton, ListItemText, Snackbar, TextField } from '@mui/material';
+import { Chip, FormControl, InputLabel, List, ListItem, ListItemButton, ListItemText, MenuItem, Select, TextField } from '@mui/material';
 import axios from 'axios';
+import { AlertSnackbar } from './AlertSnackbar';
 
 const style = {
   position: 'absolute' as 'absolute',
@@ -25,64 +26,52 @@ export default function DoctorDetailModal() {
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info'
+  });
 
-  const showSnackbar = (message: string, severity: "success" | "error") => {
-    setSnackbarMessage(message);
-    setSnackbarSeverity(severity);
-    setOpenSnackbar(true);
+  const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info') => {
+      setSnackbar({ open: true, message, severity });
   };
 
-  const [fullname, setName] = useState('');
-  const [admin, setAdmin] = useState('')
-  const [adminName, setAdminName] = useState('')
+  const [fullName, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState<string>("")
   const [address, setAddress] = useState('');
   const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<{ lat: number; lon: number; display_name: string } | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState<string[]>([])
+  const [officePhone, set0fficePhone] = useState<string>('');
   const [about, setAbout] = useState('');
-  const [specializations, setSpecializations] = useState<string[]>([]);
-  const [hospitals, setHospitals] = useState<string[]>([]);
-
-  const [phoneNumberInput, setPhoneNumberInput] = useState<string>('')
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [hospitalAffiliations, setHospitalAffiliations] = useState<string[]>([]);
   const [specializationInput, setSpecializationInput] = useState<string>('');
   const [hospitalInput, setHospitalInput] = useState<string>('');
+  const [availability, setAvailability] = useState<boolean>(true);
 
   const handleSpecializationKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && specializationInput.trim()) {
-      setSpecializations((prev) => [...prev, specializationInput.trim()]);
+      setSpecialties((prev) => [...prev, specializationInput.trim()]);
       setSpecializationInput('');
     }
   };
 
   const handleHospitalKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && hospitalInput.trim()) {
-      setHospitals((prev) => [...prev, hospitalInput.trim()]);
+      setHospitalAffiliations((prev) => [...prev, hospitalInput.trim()]);
       setHospitalInput('');
     }
   };
 
   const handleSpecializationDelete = (chipToDelete: string) => {
-    setSpecializations((prev) => prev.filter((chip) => chip !== chipToDelete));
+    setSpecialties((prev) => prev.filter((chip) => chip !== chipToDelete));
   };
 
   const handleHospitalDelete = (chipToDelete: string) => {
-    setHospitals((prev) => prev.filter((chip) => chip !== chipToDelete));
+    setHospitalAffiliations((prev) => prev.filter((chip) => chip !== chipToDelete));
   };
 
-  const handlePhoneNumberKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && phoneNumberInput.trim()) {
-      setPhoneNumber((prev) => [...prev, phoneNumberInput.trim()]);
-      setPhoneNumberInput('');
-    }
-  };
-
-  const handlePhoneNumberDelete = (chipToDelete: string) => {
-    setPhoneNumber((prev) => prev.filter((chip) => chip !== chipToDelete));
-  };
 
   const fetchAddressSuggestions = async (query: string) => {
     try {
@@ -131,33 +120,34 @@ export default function DoctorDetailModal() {
       }
   
       const { lat, lon, display_name } = selectedAddress;
-
-      const response = await axios.post('http://localhost:3000/api/v1/admin/add-doctor', {
-        fullname,
+  
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/subadmin/addDoctor`, {
+        fullName,
         email,
-        specializations,
-        hospitals,
+        licenseNumber,
+        specialties,
+        hospitalAffiliations,
+        officePhone: officePhone,
         about,
-        admin,
-        adminName,
+        availability,
         rating: 5,
         address: display_name,
         latitude: lat,
         longitude: lon,
-        phoneNumber,
+      }, {
+        withCredentials: true
       });
-
-      if (response.status === 200) {
-        showSnackbar(`${response.data.message}`, "success");
-      } else {
-        showSnackbar(`${response.data.error}`, "error");
-        return;
-      }
-
+  
+      showSnackbar(`${response.data.message}`, "success");
       window.location.reload();
+  
     } catch (error) {
-      showSnackbar("Error in Adding Doctor", "error");
-      console.error('Error in Adding Doctor: ', error);
+      if (axios.isAxiosError(error)) {
+        showSnackbar(`${error.response?.data}`, 'error');
+        console.error('Backend error:', error.response?.data);
+      } else {
+        console.error('Unexpected error:', error);
+      }
     }
   }
 
@@ -183,7 +173,7 @@ export default function DoctorDetailModal() {
           </Typography>
 
           <TextField
-            value={fullname}
+            value={fullName}
             onChange={(e) => setName(e.target.value)}
             id="outlined-name"
             label="Full Name"
@@ -203,24 +193,28 @@ export default function DoctorDetailModal() {
           />
 
           <TextField
-            value={adminName}
-            onChange={(e) => setAdminName(e.target.value)}
-            id="outlined-email"
-            label="Admin Name"
+            value={licenseNumber}
+            onChange={(e) => setLicenseNumber(e.target.value)}
+            id="outlined-licenseNumber"
+            label="License Number"
             variant="outlined"
             fullWidth
             sx={{ mb: 2 }}
           />
 
-          <TextField
-            value={admin}
-            onChange={(e) => setAdmin(e.target.value)}
-            id="outlined-email"
-            label="Admin Email"
-            variant="outlined"
-            fullWidth
-            sx={{ mb: 2 }}
-          />
+          <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
+            <InputLabel id="availability-label">Availability</InputLabel>
+            <Select
+              labelId="availability-label"
+              id="availability"
+              value={availability.toString()}
+              onChange={(e) => setAvailability(e.target.value === "true")}
+              label="Availability"
+            >
+              <MenuItem value="true">TRUE</MenuItem>
+              <MenuItem value="false">FALSE</MenuItem>
+            </Select>
+          </FormControl>
 
           <TextField
             value={address}
@@ -259,7 +253,7 @@ export default function DoctorDetailModal() {
             sx={{ mb: 2 }}
           />
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 4 }}>
-            {specializations.map((spec, index) => (
+            {specialties.map((spec, index) => (
               <Chip
                 key={index}
                 label={spec}
@@ -281,7 +275,7 @@ export default function DoctorDetailModal() {
             sx={{ mb: 2 }}
           />
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 4 }}>
-            {hospitals.map((hospital, index) => (
+            {hospitalAffiliations.map((hospital, index) => (
               <Chip
                 key={index}
                 label={hospital}
@@ -293,26 +287,13 @@ export default function DoctorDetailModal() {
           </Box>
 
           <TextField
-            value={phoneNumberInput}
-            onChange={(e) => setPhoneNumberInput(e.target.value)}
-            onKeyPress={handlePhoneNumberKeyPress}
-            label="Phone Number"
+            value={officePhone}
+            onChange={(e) => set0fficePhone(e.target.value)}
+            label="Office Number"
             variant="outlined"
             fullWidth
-            helperText="Press 'Enter' to add Phone Number"
             sx={{ mb: 2 }}
           />
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 4 }}>
-            {phoneNumber.map((phoneNumber, index) => (
-              <Chip
-                key={index}
-                label={phoneNumber}
-                onDelete={() => handlePhoneNumberDelete(phoneNumber)}
-                color="secondary"
-                sx={{ borderRadius: '4px' }}
-              />
-            ))}
-          </Box>
 
           <TextField
             value={about}
@@ -340,43 +321,14 @@ export default function DoctorDetailModal() {
           </Button>
         </Box>
       </Modal>
-      <Snackbar
-          open={openSnackbar}
-          autoHideDuration={6000}
-          onClose={() => setOpenSnackbar(false)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          sx={{
-            width: '400px',
-            borderRadius: '8px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-            padding: '0',
-            '& .MuiSnackbarContent-root': {
-              padding: 0, 
-            },
-          }}
-        >
-        <Alert
-          onClose={() => setOpenSnackbar(false)}
-          severity={snackbarSeverity}
-          sx={{
-            background: snackbarSeverity === 'success'
-              ? 'linear-gradient(90deg, rgba(70,203,131,1) 0%, rgba(129,212,250,1) 100%)'
-              : 'linear-gradient(90deg, rgba(229,57,53,1) 0%, rgba(244,143,177,1) 100%)',
-            color: '#fff',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            borderRadius: '8px',
-            padding: '16px',
-            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', 
-            width: '100%', 
-            '& .MuiAlert-icon': {
-              fontSize: '28px',
-            },
-          }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      
+      <AlertSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        position={{ vertical: 'bottom', horizontal: 'right' }}
+      />
     </div>
   );
 }
