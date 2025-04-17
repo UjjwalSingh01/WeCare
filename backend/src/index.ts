@@ -6,14 +6,16 @@ import { adminRoute } from './routes/admin';
 import cookieParser from 'cookie-parser';
 import { doctortRoute } from './routes/doctor';
 import { subAdminRouter } from './routes/subAdmin';
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// app.use(cors());
 app.use(cors({
-    origin: 'http://localhost:5173', // Your frontend URL
-    credentials: true, // Allow credentials (cookies, headers)
+  origin: process.env.FRONTEND_URL,
+  credentials: true,
 }));
 
 app.use(express.json());
@@ -25,4 +27,8 @@ app.use('/api/v1/admin', adminRoute)
 app.use('/api/v1/doctor', doctortRoute)
 app.use('/api/v1/subAdmin', subAdminRouter)
 
-app.listen(PORT);
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
+});
+
+// module.exports.handler = ServerlessHttp(app);

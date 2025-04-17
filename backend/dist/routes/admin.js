@@ -3,440 +3,379 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminRoute = void 0;
+exports.adminRoute = exports.adminLogout = void 0;
 const express_1 = __importDefault(require("express"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const client_1 = require("@prisma/client");
-const dayjs_1 = __importDefault(require("dayjs"));
-const schema_1 = require("../schema");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 const prisma = new client_1.PrismaClient();
-const app = (0, express_1.default)();
-app.use(express_1.default.json());
-app.use((0, cookie_parser_1.default)());
 const router = express_1.default.Router();
-router.post('/admin-login', async (req, res) => {
+router.post("/adminLogin", async (req, res) => {
     try {
-        const detail = await req.body;
-        const response = await prisma.admin.findFirst({
-            where: {
-                email: detail.email,
-            }
-        });
-        if (response) {
-            if (response.pin != detail.pin) {
-                return res.status(401).json({
-                    error: 'Invalid Credential'
-                });
-            }
-            res.cookie("Admin", response.id, {
-                httpOnly: true,
-                secure: false,
-                maxAge: 12 * 60 * 60 * 1000,
-                sameSite: "lax",
-            });
-            return res.status(200).json({
-                message: 'Admin'
+        const { email, pin } = req.body;
+        if (!email || !pin) {
+            return res.status(400).json({
+                message: "All fields are required."
             });
         }
-        const subAdmin = await prisma.subAdmin.findFirst({
-            where: {
-                email: detail.email
-            }
-        });
-        if (subAdmin) {
-            if (subAdmin.pin != detail.pin) {
-                return res.status(401).json({
-                    error: 'Invalid Credential'
-                });
-            }
-            res.cookie('subAdmin', subAdmin.id, {
-                httpOnly: true,
-                secure: false,
-                maxAge: 12 * 60 * 1000,
-                sameSite: 'lax'
-            });
-            return res.status(200).json({
-                message: 'Sub Admin'
-            });
-        }
-        return res.status(401).json({
-            error: 'Admin Does Not Exists'
-        });
-    }
-    catch (error) {
-        console.error("Error in Admin Login:", error);
-        return res.status(500).json({
-            error: "Error in Admin Login"
-        });
-    }
-});
-router.get('/admin-dashboard', async (req, res) => {
-    try {
-        const AdminId = await req.cookies.Admin;
-        const name = await prisma.admin.findFirst({
-            where: {
-                id: AdminId,
-            },
-            select: {
-                removeFacility: true,
-                fullname: true
-            }
-        });
-        const doctors = await prisma.doctor.findMany({
-            select: {
-                fullname: true,
-                id: true
-            }
-        });
-        const totalAppointment = await prisma.appointment.count();
-        const now = (0, dayjs_1.default)();
-        // Get start and end dates of the current month (formatted as 'MMMM D, YYYY')
-        const startOfCurrentMonth = now.startOf('month').format('MMMM D, YYYY');
-        const endOfCurrentMonth = now.endOf('month').format('MMMM D, YYYY');
-        // Get start and end dates of the last month (formatted as 'MMMM D, YYYY')
-        const startOfLastMonth = now.subtract(1, 'month').startOf('month').format('MMMM D, YYYY');
-        const endOfLastMonth = now.subtract(1, 'month').endOf('month').format('MMMM D, YYYY');
-        // Count appointments in the current month
-        const currentMonthAppointments = await prisma.appointment.count({
-            where: {
-                date: {
-                    gte: startOfCurrentMonth,
-                    lte: endOfCurrentMonth,
-                },
-            },
-        });
-        // Count appointments in the last month
-        const lastMonthAppointments = await prisma.appointment.count({
-            where: {
-                date: {
-                    gte: startOfLastMonth,
-                    lte: endOfLastMonth,
-                },
-            },
-        });
-        const appointment = await prisma.appointment.findMany({
-            select: {
-                date: true,
-                time: true,
-                status: true,
-                doctor: {
-                    select: {
-                        fullname: true,
-                    }
-                },
-                patient: {
-                    select: {
-                        fullname: true
-                    }
-                }
-            }
-        });
-        const appointments = appointment.map(appointment => ({
-            doctorname: appointment.doctor.fullname,
-            patientname: appointment.patient.fullname,
-            date: appointment.date,
-            time: appointment.time,
-            status: appointment.status
-        }));
-        const subadmin = await prisma.subAdmin.findMany({
+        const isAdminExists = await prisma.healthcareAdmin.findFirst({
+            where: { email },
             select: {
                 id: true,
-                fullname: true
-            }
-        });
-        let admins = [];
-        if (name?.removeFacility === true) {
-            admins = await prisma.admin.findMany({
-                select: {
-                    id: true,
-                    fullname: true
-                }
-            });
-        }
-        return res.status(200).json({
-            name: name?.fullname,
-            doctors: doctors,
-            subadmins: subadmin,
-            admins: admins,
-            doctorCount: doctors.length,
-            total: totalAppointment,
-            monthly: { currentMonthAppointments, lastMonthAppointments },
-            appointments: appointments,
-        });
-    }
-    catch (error) {
-        console.error("Error in Admin DashBoard Details:", error);
-        return res.status(500).json({
-            error: "Error in Admin DashBoard Details"
-        });
-    }
-});
-router.post('/add-admin', async (req, res) => {
-    try {
-        const detail = await req.body;
-        const zodResult = schema_1.AddAdminSchema.safeParse(detail);
-        if (!zodResult.success) {
-            return res.status(401).json({
-                error: 'InValid Credentials'
-            });
-        }
-        await prisma.admin.create({
-            data: {
-                fullname: detail.fullname,
-                email: detail.email,
-                pin: detail.pin,
-                removeFacility: detail.removeFacility
-            }
-        });
-        return res.status(200).json({
-            message: 'Admin Added Successfully'
-        });
-    }
-    catch (error) {
-        console.error("Error in Adding Admin:", error);
-        return res.status(500).json({
-            error: "Error in Adding Admin"
-        });
-    }
-});
-router.post('/remove-admin', async (req, res) => {
-    try {
-        const { removeId } = await req.body;
-        const response = await prisma.admin.findFirst({
-            where: {
-                id: removeId
-            }
-        });
-        if (!response) {
-            return res.status(401).json({
-                message: "Admin Does not Exist"
-            });
-        }
-        await prisma.admin.delete({
-            where: {
-                id: removeId,
-                email: response.email
-            }
-        });
-        return res.status(200).json({
-            message: 'Admin Deleted Successfully'
-        });
-    }
-    catch (error) {
-        console.error("Error in Removing Admin:", error);
-        return res.status(500).json({
-            error: "Error in Removing Admin"
-        });
-    }
-});
-router.post('/add-subadmin', async (req, res) => {
-    try {
-        const detail = await req.body;
-        const zodResult = schema_1.AddSubAdminSchema.safeParse(detail);
-        if (!zodResult.success) {
-            return res.status(401).json({
-                error: 'InValid Credentials'
-            });
-        }
-        const response = await prisma.subAdmin.findFirst({
-            where: {
-                id: detail.email
-            }
-        });
-        if (response) {
-            return res.status(401).json({
-                error: "Sub-Admin Already Exists"
-            });
-        }
-        await prisma.subAdmin.create({
-            data: {
-                fullname: detail.fullname,
-                email: detail.email,
-                pin: detail.pin,
-            }
-        });
-        return res.status(200).json({
-            message: 'Sub-Admin Added Successfully'
-        });
-    }
-    catch (error) {
-        console.error("Error in Adding Sub-Admin:", error);
-        return res.status(500).json({
-            error: "Error in Adding Sub-Admin"
-        });
-    }
-});
-router.post('/remove-subadmin', async (req, res) => {
-    try {
-        const { removeId } = await req.body;
-        const response = await prisma.subAdmin.findFirst({
-            where: {
-                id: removeId
-            }
-        });
-        if (!response) {
-            return res.status(401).json({
-                error: 'Sub Admin Does Not Exists'
-            });
-        }
-        await prisma.subAdmin.delete({
-            where: {
-                id: removeId,
-                email: response.email
-            }
-        });
-        return res.status(200).json({
-            message: 'Sub Admin Removed'
-        });
-    }
-    catch (error) {
-        console.error("Error in Removing Sub-Admin:", error);
-        return res.status(500).json({
-            error: "Error in Removing Sub-Admin"
-        });
-    }
-});
-router.post('/add-doctor', async (req, res) => {
-    try {
-        const details = await req.body;
-        const zodResult = schema_1.doctorSchema.safeParse(details);
-        if (!zodResult.success) {
-            console.log(zodResult.error);
-            return res.status(400).json({
-                error: "Invalid Request",
-            });
-        }
-        const response = await prisma.doctor.findFirst({
-            where: {
-                email: details.email
-            }
-        });
-        if (response) {
-            return res.status(401).json({
-                "error": "Doctor Already Exists"
-            });
-        }
-        const subAdmin = await prisma.subAdmin.findFirst({
-            where: {
-                email: details.admin
-            }
-        });
-        if (!subAdmin) {
-            await prisma.subAdmin.create({
-                data: {
-                    email: details.admin,
-                    pin: '000000',
-                    fullname: details.adminName
-                }
-            });
-        }
-        const findSubAdmin = await prisma.subAdmin.findFirst({
-            where: {
-                email: details.admin
-            }
-        });
-        const doctor = await prisma.doctor.create({
-            data: {
-                fullname: details.fullname,
-                email: details.email,
-                specializations: details.specializations,
-                hospitals: details.hospitals,
-                about: details.about,
-                admin: findSubAdmin?.id,
-                rating: details.rating,
-                phoneNumber: details.phoneNumber,
-                address: details.address,
-                latitude: details.latitude,
-                longitude: details.longitude
-            }
-        });
-        await prisma.subAdmin.update({
-            where: {
-                id: findSubAdmin?.id,
+                email: true,
+                fullName: true,
+                pin: true,
+                role: true,
+                permissions: true,
             },
+        });
+        if (!isAdminExists) {
+            return res.status(404).json({
+                message: "Admin not found."
+            });
+        }
+        // Compare pin
+        const isMatch = await bcryptjs_1.default.compare(pin, isAdminExists.pin);
+        if (!isMatch) {
+            return res.status(401).json({
+                message: "Incorrect PIN."
+            });
+        }
+        // Generate a token
+        const token = ({
+            id: isAdminExists.id,
+            role: isAdminExists.role,
+            permissions: isAdminExists.permissions,
+        });
+        // Set token in a secure HTTP-only cookie
+        res.cookie("token", JSON.stringify(token), {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+        return res.status(200).json({
+            message: "Admin login successful.",
             data: {
-                doctors: {
-                    push: doctor.id,
+                email: isAdminExists.email,
+                role: isAdminExists.role,
+                fullName: isAdminExists.fullName
+            },
+        });
+    }
+    catch (error) {
+        console.error("Server Error in Admin Login:", error);
+        return res.status(500).json({
+            message: "Internal server error.",
+            error: error,
+        });
+    }
+});
+router.get('/dashboard', async (req, res) => {
+    try {
+        console.log('hello');
+        const token = req.cookies.token;
+        const admin = JSON.parse(token);
+        if (!admin) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const totalAdmins = await prisma.healthcareAdmin.count();
+        const totalDoctors = await prisma.doctor.count();
+        const activeAppointments = await prisma.appointment.count({
+            where: { status: 'CONFIRMED' }
+        });
+        const recentAppointments = await prisma.appointment.findMany({
+            where: { status: 'CONFIRMED' },
+            include: {
+                patient: { select: { fullName: true } },
+                doctor: { select: { fullName: true } }
+            },
+            orderBy: { scheduledAt: 'desc' },
+            take: 5
+        });
+        console.log(totalAdmins);
+        console.log(totalDoctors);
+        console.log(activeAppointments);
+        console.log(recentAppointments);
+        res.status(200).json({
+            message: 'Successfully Fetched Dashboard Details',
+            data: {
+                stats: {
+                    totalAdmins,
+                    totalDoctors,
                 },
-            },
-        });
-        return res.status(200).json({
-            message: 'Doctor Added Successfully'
+                appointment: {
+                    activeAppointment: activeAppointments,
+                    recentAppointments: recentAppointments.map(appt => ({
+                        patient: appt.patient.fullName,
+                        doctor: appt.doctor.fullName,
+                        schedule: appt.scheduledAt.toISOString(),
+                        status: appt.status,
+                    }))
+                }
+            }
         });
     }
     catch (error) {
-        console.error("Error in Adding Doctor:", error);
-        return res.status(500).json({
-            error: "Error in Adding Doctor"
+        console.log("Server Error in Fetching Admin Dashboard Details: ", error);
+        res.status(500).json({
+            message: "Server Error in Fetching Admin Dashboard Details",
+            error: error
         });
     }
 });
-router.post('/remove-doctor', async (req, res) => {
+router.get('/administration', async (req, res) => {
     try {
-        const { removeId } = await req.body;
-        const response = await prisma.doctor.findFirst({
-            where: {
-                id: removeId
-            }
-        });
-        if (!response || response.admin === null) {
-            return res.status(401).json({
-                error: 'Doctor Does Not Exist'
-            });
+        const token = req.cookies.token;
+        const admin = JSON.parse(token);
+        if (!admin || admin.role !== client_1.AdminRole.SUPER_ADMIN) {
+            return res.status(401).json({ message: "Unauthorized" });
         }
-        const subAdmin = await prisma.subAdmin.findFirst({
-            where: {
-                id: response.admin
-            },
+        const admins = await prisma.healthcareAdmin.findMany({
             select: {
-                doctors: true,
-            },
-        });
-        if (!subAdmin) {
-            throw new Error("SubAdmin not found");
-        }
-        const updatedDoctors = subAdmin.doctors.filter((doctor) => doctor !== response.email);
-        await prisma.subAdmin.update({
-            where: {
-                id: response.admin
-            },
-            data: {
-                doctors: {
-                    set: updatedDoctors,
+                id: true,
+                fullName: true,
+                _count: {
+                    select: { managedDoctors: true },
                 },
+                lastAccess: true,
+                role: true,
+                verifiedBy: {
+                    select: { fullName: true },
+                },
+                isActive: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
             },
         });
-        await prisma.doctor.delete({
-            where: {
-                id: removeId,
-                email: response.email
+        const formattedAdmins = admins.map(admin => ({
+            id: admin.id,
+            name: admin.fullName,
+            doctorUnderManagement: admin._count.managedDoctors,
+            lastActive: admin.lastAccess.toISOString(),
+            activityStatus: admin.isActive ? 'Active' : 'Inactive',
+            verifiedBy: admin.verifiedBy ? admin.verifiedBy.fullName : "Not Verified",
+        }));
+        res.status(200).json({
+            message: 'Successfully Fetched Administration Details',
+            data: formattedAdmins,
+        });
+    }
+    catch (error) {
+        console.error("Error Fetching Administration Details:", error);
+        res.status(500).json({
+            message: 'Failed to fetch administration data',
+            error: error,
+        });
+    }
+});
+router.get('/doctors', async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        const admin = JSON.parse(token);
+        if (admin.role !== 'SUPER_ADMIN') {
+            return res.status(403).json({ message: 'Not Authorized' });
+        }
+        const doctors = await prisma.doctor.findMany({
+            include: {
+                appointments: {
+                    orderBy: { scheduledAt: 'desc' },
+                    take: 1,
+                    select: { scheduledAt: true }
+                }
             }
         });
-        return res.status(200).json({
-            message: 'Doctor Removed Successfully'
+        const formattedDoctors = doctors.map(doctor => ({
+            id: doctor.id,
+            name: doctor.fullName,
+            licenseNumber: doctor.licenseNumber || 'N/A',
+            totalAppointments: doctor.appointments.length,
+            lastAppointment: doctor.appointments[0]?.scheduledAt.toISOString() || 'N/A',
+            status: doctor.verified ? 'ACTIVE' : 'INACTIVE',
+            added: doctor.createdAt.toISOString(),
+            verified: doctor.verified ? true : false,
+            rating: doctor.rating
+        }));
+        res.status(200).json({
+            message: "Successfully Fetched Doctor Details",
+            data: formattedDoctors
         });
     }
     catch (error) {
-        console.error("Error in Removing Doctor:", error);
-        return res.status(500).json({
-            error: "Error in Removing Doctor"
-        });
+        console.error('Doctors error:', error);
+        res.status(500).json({ message: 'Failed to load doctors' });
     }
 });
-router.post('/logout', async (req, res) => {
+router.post("/activityUpdate/:id", async (req, res) => {
     try {
-        res.clearCookie('Admin');
-        res.clearCookie('subAdmin');
-        return res.status(200).json({
-            message: 'Logout Successful'
+        const token = req.cookies.token;
+        const admin = JSON.parse(token);
+        if (!admin || admin.role !== client_1.AdminRole.SUPER_ADMIN) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        const targetId = req.params.id;
+        const { activityStatus } = req.body;
+        const adminExists = await prisma.healthcareAdmin.findFirst({
+            where: {
+                id: targetId
+            }
+        });
+        if (!adminExists) {
+            res.status(404).json({
+                message: 'Admin Does Not Exists'
+            });
+        }
+        await prisma.healthcareAdmin.update({
+            where: {
+                id: targetId
+            },
+            data: {
+                isActive: activityStatus === 'Active' ? true : false
+            }
+        });
+        res.status(200).json({
+            message: 'Succesfully Updated Activity Status'
         });
     }
     catch (error) {
-        console.error("Error in Sub Admin Logout", error);
-        return res.status(500).json({
-            error: "Error in Sub Admin Logout"
+        console.error("Server Error in Admin Activity Status Updation:", error);
+        res.status(500).json({
+            message: "Server Error in Admin Activity Status Updation. Please Try Again",
+            error: error
         });
     }
 });
+// Create Admin (Only by SUPER_ADMIN)
+router.post("/addAdmin", async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        const creator = JSON.parse(token);
+        if (!creator) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        // FACILITY_ADMIN cannot create any admin
+        if (creator.role === client_1.AdminRole.FACILITY_ADMIN) {
+            return res.status(403).json({ message: "FACILITY_ADMIN cannot create admins" });
+        }
+        const { fullName, email, pin, role, permission } = req.body;
+        // SUPER_ADMIN Creation Rules
+        if (role === client_1.AdminRole.SUPER_ADMIN) {
+            // Only SUPER_ADMIN with FULL_ACCESS can create another SUPER_ADMIN
+            if (creator.role !== client_1.AdminRole.SUPER_ADMIN || creator.permissions !== client_1.AdminPermission.FULL_ACCESS) {
+                return res.status(403).json({ message: "Only a SUPER_ADMIN with FULL_ACCESS can create a SUPER_ADMIN" });
+            }
+            // Check if there's already a SUPER_ADMIN with FULL_ACCESS
+            const existingSuperAdmin = await prisma.healthcareAdmin.findFirst({
+                where: { role: client_1.AdminRole.SUPER_ADMIN, permissions: client_1.AdminPermission.FULL_ACCESS }
+            });
+            if (existingSuperAdmin && permission === client_1.AdminPermission.FULL_ACCESS) {
+                return res.status(400).json({ message: "Only one SUPER_ADMIN can have FULL_ACCESS" });
+            }
+        }
+        // Hash PIN
+        const hashedPin = await bcryptjs_1.default.hash(pin, 12);
+        await prisma.healthcareAdmin.create({
+            data: {
+                fullName,
+                email,
+                pin: hashedPin,
+                role,
+                permissions: permission,
+                verifiedById: creator.id,
+                lastAccess: new Date(),
+                isActive: true
+            }
+        });
+        res.status(201).json({
+            message: "Admin Added Successfully",
+        });
+    }
+    catch (error) {
+        console.error("Admin creation error:", error);
+        res.status(500).json({
+            message: "Admin creation failed",
+            error: error
+        });
+    }
+});
+// Delete Admin
+// admin.full_access ==> admin.read&write
+// admin.read&write => admin.facility_admin
+// admin.facility => nothing
+router.delete("/deleteAdmin/:id", async (req, res) => {
+    try {
+        const adminId = req.params.id;
+        const token = req.cookies.token;
+        const deleter = JSON.parse(token);
+        if (!deleter) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        // FACILITY_ADMIN cannot delete any admin
+        if (deleter.role === client_1.AdminRole.FACILITY_ADMIN) {
+            return res.status(403).json({ message: "FACILITY_ADMIN cannot delete admins" });
+        }
+        // Find the target admin to delete
+        const targetAdmin = await prisma.healthcareAdmin.findUnique({
+            where: { id: adminId },
+        });
+        if (!targetAdmin) {
+            return res.status(404).json({ message: "Admin not found" });
+        }
+        // Prevent deletion of SUPER_ADMIN with FULL_ACCESS
+        if (targetAdmin.role === client_1.AdminRole.SUPER_ADMIN && targetAdmin.permissions === client_1.AdminPermission.FULL_ACCESS) {
+            return res.status(403).json({ message: "Cannot delete a SUPER_ADMIN with FULL_ACCESS" });
+        }
+        // SUPER_ADMIN with READ_WRITE can only be deleted by SUPER_ADMIN with FULL_ACCESS
+        if (targetAdmin.role === client_1.AdminRole.SUPER_ADMIN && targetAdmin.permissions === client_1.AdminPermission.READ_WRITE) {
+            if (deleter.role !== client_1.AdminRole.SUPER_ADMIN || deleter.permissions !== client_1.AdminPermission.FULL_ACCESS) {
+                return res.status(403).json({ message: "Only a SUPER_ADMIN with FULL_ACCESS can delete a SUPER_ADMIN with READ_WRITE" });
+            }
+        }
+        // Prevent deletion of the last SUPER_ADMIN with FULL_ACCESS
+        if (targetAdmin.permissions === client_1.AdminPermission.FULL_ACCESS) {
+            const remainingFullAccessAdmins = await prisma.healthcareAdmin.count({
+                where: {
+                    role: client_1.AdminRole.SUPER_ADMIN,
+                    permissions: client_1.AdminPermission.FULL_ACCESS,
+                },
+            });
+            if (remainingFullAccessAdmins <= 1) {
+                return res.status(400).json({
+                    message: "Cannot delete the last SUPER_ADMIN with FULL_ACCESS",
+                });
+            }
+        }
+        // Delete the admin
+        await prisma.healthcareAdmin.delete({
+            where: { id: adminId },
+        });
+        res.status(200).json({
+            message: "Admin Deleted Successfully",
+        });
+    }
+    catch (error) {
+        console.error("Admin deletion error:", error);
+        res.status(500).json({
+            message: "Admin deletion failed",
+            error: error
+        });
+    }
+});
+const adminLogout = async (_req, res) => {
+    try {
+        // Clear the auth cookie
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        });
+        return res.status(200).json({ message: 'Logout successful.' });
+    }
+    catch (error) {
+        console.error('Error in Admin Logout:', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+    }
+};
+exports.adminLogout = adminLogout;
 exports.adminRoute = router;

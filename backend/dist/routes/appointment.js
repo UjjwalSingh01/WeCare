@@ -5,127 +5,128 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.appointmentRoute = void 0;
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const client_1 = require("@prisma/client");
-const schema_1 = require("../schema");
 // import { sendOtpEmail } from "../middlewares/nodemailer";
 const prisma = new client_1.PrismaClient();
-const app = (0, express_1.default)();
-app.use(express_1.default.json());
-app.use((0, cookie_parser_1.default)());
-app.use((0, cors_1.default)({
-    origin: 'http://localhost:5173',
-    credentials: true,
-}));
-const JWT_SECRET = process.env.JWT_SECRET;
 const router = express_1.default.Router();
-router.get('/get-appointment', async (req, res) => {
+// Fetch Active Appointments
+router.get('/getAppointments', async (req, res) => {
     try {
-        const patientId = await req.cookies.Patient;
-        // console.log(req.cookies.Patient)
+        const patientId = req.cookies.Patient;
+        if (!patientId) {
+            return res.status(401).json({
+                message: "Unauthorized: Patient token not present"
+            });
+        }
         const appointments = await prisma.appointment.findMany({
             where: {
-                patientId: patientId,
-                status: 'ACTIVE',
+                patientId,
+                status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] }
             },
             select: {
                 id: true,
-                date: true,
-                time: true,
+                scheduledAt: true,
                 doctor: {
-                    select: {
-                        fullname: true,
-                    },
-                },
+                    select: { fullName: true }
+                }
             },
-        });
-        const result = appointments.map(appointment => ({
-            appointmentId: appointment.id,
-            date: appointment.date,
-            time: appointment.time,
-            doctorName: appointment.doctor.fullname,
-        }));
-        const doctors = await prisma.doctor.findMany({
-            select: {
-                fullname: true,
-                id: true
+            orderBy: {
+                scheduledAt: 'asc'
             }
         });
+        const doctors = await prisma.doctor.findMany({
+            select: {
+                id: true,
+                fullName: true
+            }
+        });
+        const formattedAppointments = appointments.map(a => {
+            const dateObj = new Date(a.scheduledAt);
+            return {
+                appointmentId: a.id,
+                date: dateObj.toISOString().split('T')[0], // YYYY-MM-DD
+                time: dateObj.toTimeString().split(' ')[0], // HH:MM:SS
+                doctorName: a.doctor.fullName,
+            };
+        });
         return res.status(200).json({
-            appointments: result,
-            doctors: doctors
+            appointments: formattedAppointments,
+            doctors
         });
     }
     catch (error) {
-        console.error("Error in Retrieving Appointments", error);
+        console.error("Error retrieving appointments:", error);
         return res.status(500).json({
-            error: "Error in Retrieving Appointments"
+            message: "Failed to retrieve appointments"
         });
     }
 });
-router.post('/make-appointment', async (req, res) => {
+router.post('/makeAppointment', async (req, res) => {
     try {
-        const detail = await req.body;
-        const zodResult = schema_1.appointmentSchema.safeParse(detail);
-        if (!zodResult.success) {
-            return res.status(401).json({
-                error: 'Invalid Credentials'
-            });
-        }
-        // CANNOT MAKE AN APPOINTMENT BEFORE CURRET TIME
-        const patientId = await req.cookies.Patient;
+        const patientId = req.cookies.Patient;
         if (!patientId) {
             return res.status(401).json({
-                error: "Unauthorized: Patient token not present",
+                message: "Unauthorized: Patient token not present"
             });
         }
-        const response = await prisma.appointment.count({
+        const detail = req.body;
+        // Parse combined date & time into a Date object
+        const dateTimeString = `${detail.date} ${detail.time}`;
+        const scheduledAt = new Date(dateTimeString);
+        if (isNaN(scheduledAt.getTime())) {
+            return res.status(400).json({ message: "Invalid date or time format" });
+        }
+        console.log(req.body);
+        console.log(scheduledAt);
+        // Cannot book in the past
+        if (scheduledAt < new Date()) {
+            return res.status(400).json({
+                message: "You cannot book an appointment in the past"
+            });
+        }
+        const appointmentCount = await prisma.appointment.count({
             where: {
-                patientId: patientId,
-                status: 'ACTIVE'
+                patientId,
+                status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] }
             }
         });
-        if (response == 5) {
+        if (appointmentCount >= 5) {
             return res.status(400).json({
-                error: "You cannot have more than 5 appointments",
+                message: "You cannot have more than 5 appointments"
             });
         }
-        const duplicateAppointment = await prisma.appointment.findFirst({
+        const duplicateDoctorAppointment = await prisma.appointment.findFirst({
             where: {
                 doctorId: detail.physician,
-                date: detail.date,
-                time: detail.time,
-                status: 'ACTIVE'
+                scheduledAt,
+                status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] }
             }
         });
-        if (duplicateAppointment) {
+        if (duplicateDoctorAppointment) {
             return res.status(409).json({
-                error: "Appointment is Not Available at this date and time",
+                message: "Doctor already has an appointment at this date and time"
             });
         }
         const duplicatePatientAppointment = await prisma.appointment.findFirst({
             where: {
-                patientId: patientId,
-                date: detail.date,
-                time: detail.time,
-                status: 'ACTIVE'
+                patientId,
+                scheduledAt,
+                status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] }
             }
         });
         if (duplicatePatientAppointment) {
             return res.status(409).json({
-                error: "You Already have an Appointment at this Date & Time",
+                message: "You already have an appointment at this date and time"
             });
         }
         await prisma.appointment.create({
             data: {
                 doctorId: detail.physician,
-                patientId: patientId,
+                patientId,
                 reason: detail.reason,
-                note: detail.note,
-                date: detail.date,
-                time: detail.time,
-                status: 'ACTIVE'
+                clinicalNotes: detail.note,
+                scheduledAt,
+                status: 'PENDING'
             }
         });
         return res.status(200).json({
@@ -134,81 +135,45 @@ router.post('/make-appointment', async (req, res) => {
     }
     catch (error) {
         console.error('Error creating appointment:', error);
-        return res.status(500).json({
-            error: "Internal Server Error: Unable to create appointment",
-        });
+        return res.status(500).json({ error: "Internal Server Error: Unable to create appointment" });
     }
 });
-router.post('/cancel-appointment', async (req, res) => {
+// CANCEL APPOINTMENT 
+router.delete('/cancelAppointment/:id', async (req, res) => {
     try {
-        const { id } = await req.body;
+        const patientId = req.cookies.Patient;
+        if (!patientId) {
+            return res.status(401).json({
+                message: "Unauthorized: Patient token not present"
+            });
+        }
+        const id = req.params.id;
         console.log(id);
-        const appointment = await prisma.appointment.findFirst({
-            where: {
-                id: id
-            }
+        const appointment = await prisma.appointment.findUnique({
+            where: { id }
         });
         if (!appointment) {
-            return res.status(200).json({
-                error: "Appointment Not Present"
+            return res.status(404).json({
+                message: "Appointment not found"
+            });
+        }
+        if (appointment.patientId !== patientId) {
+            res.status(401).json({
+                message: 'Not Authorized To Cancel Appointment'
             });
         }
         await prisma.appointment.update({
-            where: {
-                id: id
-            },
-            data: {
-                status: 'CANCELLED'
-            }
+            where: { id },
+            data: { status: 'CANCELLED' }
         });
-        // await prisma.appointment.update({
-        //     where: {
-        //         id: id,
-        //     },
-        //     data: {
-        //         status: 'CANCELLED',
-        //     }
-        // });
         return res.status(200).json({
             message: 'Appointment Cancelled Successfully'
         });
     }
     catch (error) {
-        console.error("Error in Cancelling Appointments", error);
+        console.error("Error cancelling appointment:", error);
         return res.status(500).json({
-            error: "Error in Cancelling Appointments"
-        });
-    }
-});
-router.post('/update-appointment', async (req, res) => {
-    try {
-        const detail = await req.body;
-        const response = await prisma.appointment.findFirst({
-            where: {
-                id: detail.id
-            }
-        });
-        if (!response) {
-            return res.status(401).json({
-                error: "Appointment Does Not Exists"
-            });
-        }
-        await prisma.appointment.update({
-            where: {
-                id: detail.id
-            },
-            data: {
-                status: detail.action
-            }
-        });
-        return res.status(200).json({
-            message: 'Appointment Updated Successful'
-        });
-    }
-    catch (error) {
-        console.error("Error in Updating Appointments", error);
-        return res.status(500).json({
-            error: "Error in Updating Appointments"
+            message: "Internal Server Error: Unable to cancel appointment"
         });
     }
 });
